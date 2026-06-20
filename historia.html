@@ -59,13 +59,45 @@
 <div class="abs txt" style="left:755px;top:3698px;min-width:449px;white-space:nowrap;font-family:'Open Sans';font-size:13.3333px;font-weight:400;color:rgb(33, 33, 33);line-height:21.3333px;text-align:center;z-index:2">Maria Emília Neto de Sousa, presidente da CMA, coloca a primeira pedra</div>
 <div class="abs txt" style="left:114px;top:3805px;width:1138px;font-family:'Open Sans';font-size:18.6667px;font-weight:400;color:rgb(0, 0, 0);line-height:25.76px;text-align:justify;z-index:2">Entre as distinções atribuídas à Academia destaca-se o estatuto de Utilidade Pública atribuído a 7 de novembro de 1978 e a medalha de Ouro da Cidade com fita de seda bordada a ouro com as armas da cidade, conforme a deliberação camarária a 24 de Março de 1995, como reconhecimento dos serviços distintos e altamente meritórios prestados à comunidade, de forma exemplar e duradoura.</div>
 <div class="abs" style="left:303px;top:3964px;width:760px;height:546px;z-index:1"><img src="assets/geo/historia_g8.png" alt="" style="width:760px;height:546px"></div>
-<div class="abs txt" style="left:114px;top:4573px;min-width:1098px;white-space:nowrap;font-family:Oswald;font-size:38.6667px;font-weight:400;color:rgb(31, 31, 31);line-height:54.9067px;text-transform:uppercase;text-align:start;z-index:2">GALERIA DE PRESIDENTES</div>
+<div class="abs txt collap-header" data-collap="collap-galeria" data-delta="1297" data-thr="4619" style="left:114px;top:4573px;min-width:1098px;white-space:nowrap;font-family:Oswald;font-size:38.6667px;font-weight:400;color:rgb(31, 31, 31);line-height:54.9067px;text-transform:uppercase;text-align:start;z-index:4;cursor:pointer">GALERIA DE PRESIDENTES</div><div class="abs collap-chevron" data-for="collap-galeria" style="left:1190px;top:4573px;z-index:4">&#9662;</div>
 <a class="abs foot-soc" href="https://www.facebook.com/AcademiaAlmadense" target="_blank" rel="noopener" style="left:625px;top:4698px;width:28px;height:28px;z-index:2" aria-label="facebook"><img src="assets/facebook.png" alt="facebook"></a>
 <a class="abs foot-soc" href="https://instagram.com/academia.almadense/" target="_blank" rel="noopener" style="left:669px;top:4698px;width:28px;height:28px;z-index:2" aria-label="instagram"><img src="assets/instagram.png" alt="instagram"></a>
 <a class="abs foot-soc" href="https://youtube.com/user/AcademiaAlmadense" target="_blank" rel="noopener" style="left:713px;top:4698px;width:28px;height:28px;z-index:2" aria-label="youtube"><img src="assets/youtube.png" alt="youtube"></a>
 <div class="abs txt" style="left:502px;top:4754px;min-width:355px;white-space:nowrap;font-family:'Open Sans';font-size:13.3333px;font-weight:400;color:rgb(33, 33, 33);line-height:21.3333px;text-align:center;z-index:2">Academia de Instrução e Recreio Familiar Almadense 202</div>
+<div id="collap-galeria" class="abs collap-content" style="display:none;left:0px;top:4644px;width:1366px;;z-index:2"><img src="assets/galeria/gallery.png" alt="" style="display:block;width:1366px;height:auto"></div>
 </div>
 <div class="cookie-box" id="cookieBox"><p>This site uses cookies from Google to deliver its services and to analyze traffic. Information about your use of this site is shared with Google. By using this site, you agree to its use of cookies.</p><div class="cookie-actions"><a href="#" class="cookie-learn">LEARN MORE</a><button class="cookie-ok" onclick="document.getElementById('cookieBox').style.display='none'">GOT IT</button></div></div>
-
+<script>
+(function(){
+  var canvas=document.querySelector('.page-canvas'); if(!canvas) return;
+  var els=[].slice.call(canvas.children);
+  els.forEach(function(el){ el.setAttribute('data-baset', parseFloat(el.style.top)||0); });
+  var h0=parseFloat(canvas.style.height); var active={};
+  function recompute(){
+    var extra=0; for(var k in active) extra+=active[k]?active[k].delta:0;
+    els.forEach(function(el){
+      if(el.classList.contains('collap-content')) return;
+      var base=parseFloat(el.getAttribute('data-baset')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<base) off+=a.delta; }
+      el.style.top=(base+off)+'px';
+    });
+    canvas.style.height=(h0+extra)+'px';
+  }
+  function toggle(id){
+    var h=document.querySelector('.collap-header[data-collap="'+id+'"]');
+    var content=document.getElementById(id);
+    var exp=content.style.display==='none';
+    content.style.display=exp?'block':'none';
+    h.classList.toggle('expanded',exp);
+    // position content accounting for collapsibles above it
+    var off=0; for(var k in active){ var a=active[k]; if(a && a.thr<parseFloat(content.getAttribute('data-baset'))) off+=a.delta; }
+    active[id]=exp?{thr:+h.dataset.thr,delta:+h.dataset.delta}:null;
+    content.style.top=(parseFloat(content.getAttribute('data-baset'))+off)+'px';
+    recompute();
+  }
+  document.querySelectorAll('.collap-header').forEach(function(h){ h.addEventListener('click',function(){toggle(h.dataset.collap);}); });
+  document.querySelectorAll('.collap-chevron').forEach(function(c){ c.style.cursor='pointer'; c.addEventListener('click',function(){toggle(c.dataset.for);}); });
+})();
+</script>
 </body>
 </html>

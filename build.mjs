@@ -47,6 +47,12 @@ const COLLAPSIBLES = {
       'Em 2008, foi condecorado pela Câmara Municipal do Seixal com a medalha de mérito cultural. No campo do ensino da Música em Colectividades, dirigiu a Banda da Sociedade Filarmónica Timbre Seixalense, a Banda da Sociedade Filarmónica da Gançaria, a Banda da Sociedade Filarmónica Gualdim Pais de Tomar e a Orquestra do Clube Recreativo da Cruz de Pau. Actualmente dirige a Banda da Associação Desportiva e Recreativa "o Paraíso", em Vale do Paraíso, Azambuja, e a Banda Filarmónica da Academia de Instrução e Recreio Familiar Almadense.',
     ],
   }],
+  historia: [{
+    header: 'GALERIA DE PRESIDENTES',
+    id: 'collap-galeria',
+    delta: 1297, shiftAbove: 4960, left: 0, top: 4985, width: 1366,
+    image: 'assets/galeria/gallery.png',
+  }],
 };
 
 // Banner data: render the title as live HTML (fixed font-size) over a cover
@@ -195,8 +201,10 @@ function buildPage(slug){
   // hidden collapsible content blocks
   for(const col of cols){
     const ctop = col.top - ANCHOR;
-    const inner = col.paras.map(p=>`<p style="margin:0 0 14px">${esc(p)}</p>`).join('');
-    parts.push(`<div id="${col.id}" class="abs collap-content" style="display:none;left:${col.left}px;top:${ctop}px;width:${col.width}px;${col.style};z-index:2">${inner}</div>`);
+    const inner = col.image
+      ? `<img src="${col.image}" alt="" style="display:block;width:${col.width}px;height:auto">`
+      : col.paras.map(p=>`<p style="margin:0 0 14px">${esc(p)}</p>`).join('');
+    parts.push(`<div id="${col.id}" class="abs collap-content" style="display:none;left:${col.left}px;top:${ctop}px;width:${col.width}px;${col.style||''};z-index:2">${inner}</div>`);
   }
 
   if(HINO_LYRICS){
