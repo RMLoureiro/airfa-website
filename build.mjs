@@ -41,7 +41,7 @@ function bannerHtml(slug, anchor){
   const H = anchor - 56;                       // banner height below the 56px header
   const titleTop = (info.titleY||140) - 56;
   const bg = info.bgFile
-    ? `<div class="banner-bg" style="inset:0;background-image:url('${info.bgFile}');background-position:${info.bgPos||'50% 50%'}"></div>` : '';
+    ? `<div class="banner-bg" style="inset:0;background-image:url('${info.bgFile}');background-position:${info.bgPos||'50% 50%'}"></div><div class="banner-overlay"></div>` : '';
   const rule = ul
     ? `<div class="banner-rule" style="top:${ul.y}px;width:${ul.w}px;height:${Math.min(4,ul.h)||3}px"></div>` : '';
   const ff = (info.tFf||"'Oswald'").replace(/"/g,"'");
