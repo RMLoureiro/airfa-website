@@ -1,0 +1,364 @@
+:root{
+  --red:#d3413f;        /* rgb(211,65,63) band & footer accent */
+  --coral:#ff5252;      /* rgb(255,82,82) hero underline */
+  --dark:#1f1f1f;       /* rgb(31,31,31)  nav / dark headings */
+  --ink:#050505;        /* body text */
+  --foot:#212121;       /* footer text */
+  --content:1138px;     /* inner content width (1366 - 2*114) */
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:'Open Sans',sans-serif;
+  color:var(--ink);
+  background:#fff;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block;max-width:100%;}
+a{color:inherit;text-decoration:none;}
+
+/* ============ HEADER ============ */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:#fff;
+  height:56px;
+  box-shadow:0 1px 2px rgba(0,0,0,.12);
+}
+.header-inner{
+  height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-logo{height:40px;width:auto;}
+.brand-title{
+  font-family:'Oswald',sans-serif;
+  font-weight:600;
+  font-size:22px;
+  letter-spacing:.5px;
+  color:var(--dark);
+}
+.main-nav{display:flex;align-items:center;gap:0;}
+.nav-item{
+  font-family:'Open Sans',sans-serif;
+  font-weight:600;
+  font-size:16px;
+  color:var(--dark);
+  padding:6px 6px;
+  margin:0 12px;
+  cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  white-space:nowrap;
+}
+.nav-item.active{
+  background:var(--dark);
+  color:#fff;
+  border-radius:4px;
+  padding:6px 16px;
+}
+.caret{font-size:11px;line-height:1;opacity:.8;}
+.nav-search{
+  background:none;border:none;cursor:pointer;
+  color:var(--dark);
+  margin-left:14px;padding:4px;display:inline-flex;
+}
+
+/* ============ HERO ============ */
+.hero{
+  position:relative;
+  height:840px;
+  background:url('assets/hero-theater.jpg') center 42%/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.hero-overlay{position:absolute;inset:0;background:rgba(0,0,0,.18);}
+.hero-content{position:relative;z-index:2;width:100%;text-align:center;}
+.hero-title{
+  position:relative;
+  margin:0 auto;
+  font-family:'Oswald',sans-serif;
+  font-weight:400;
+  font-size:96px;
+  line-height:1.2;
+  text-transform:uppercase;
+  color:#fff;
+  text-align:center;
+}
+.hero-title::before{
+  content:"";
+  position:absolute;
+  left:50%;transform:translateX(-50%);
+  top:50%;
+  width:1154px;max-width:90vw;
+  height:3px;
+  background:var(--coral);
+  z-index:-1;
+}
+.hero-title span{
+  background:transparent;
+  padding:0 18px;
+}
+.hero-social{
+  margin-top:34px;
+  display:flex;justify-content:center;gap:14px;
+}
+.soc-circle{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.soc-circle img{width:20px;height:20px;opacity:.92;}
+
+/* ============ SECTIONS ============ */
+.band-white{background:#fff;}
+.heading-131{
+  max-width:var(--content);
+  margin:0 auto;
+  padding:64px 24px;
+  font-family:'Oswald',sans-serif;
+  font-weight:400;
+  font-size:64px;
+  line-height:1.23;
+  text-transform:uppercase;
+  text-align:center;
+  color:var(--dark);
+}
+
+.band-red{
+  background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  padding:30px 24px;
+}
+.heading-proximas{
+  margin:0;
+  font-family:'Oswald',sans-serif;
+  font-weight:400;
+  font-size:50.6667px;
+  line-height:1.23;
+  text-transform:uppercase;
+  text-align:center;
+  color:#fff;
+}
+
+/* ============ CAROUSEL ============ */
+.carousel-section{padding:48px 24px;}
+.carousel{
+  max-width:var(--content);
+  margin:0 auto;
+  display:flex;flex-direction:column;align-items:center;
+}
+.carousel-track{
+  position:relative;
+  width:520px;max-width:100%;
+  height:735px;
+}
+.slide{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:contain;
+  opacity:0;transition:opacity .6s ease;
+}
+.slide.active{opacity:1;}
+.dots{
+  margin-top:24px;
+  display:flex;gap:10px;justify-content:center;
+}
+.dot{
+  width:10px;height:10px;border-radius:50%;
+  background:#bdbdbd;cursor:pointer;
+}
+.dot.active{background:var(--red);}
+
+/* ============ ATIVIDADES ============ */
+.activities{
+  max-width:var(--content);
+  margin:0 auto;
+  padding:0 24px 56px;
+}
+.coral-rule{
+  border:none;height:2px;background:var(--red);
+  margin:0 0 40px;
+}
+.heading-atividades{
+  margin:0 0 34px;
+  font-family:'Oswald',sans-serif;
+  font-weight:400;
+  font-size:40px;
+  line-height:1.23;
+  text-transform:uppercase;
+  text-align:center;
+  color:var(--dark);
+}
+.act-text{
+  margin:0 0 22px;
+  font-family:'Open Sans',sans-serif;
+  font-weight:400;
+  font-size:26.6667px;
+  line-height:1.35;
+  color:var(--ink);
+}
+.act-text a{text-decoration:underline;}
+
+/* ============ RED SPACER ============ */
+.band-red-spacer{
+  background:var(--red);
+  height:67px;
+}
+
+/* ============ FOOTER ============ */
+.site-footer{
+  background:#fff;
+  text-align:center;
+  padding:34px 24px 44px;
+}
+.footer-social{
+  display:flex;justify-content:center;gap:14px;
+  margin-bottom:22px;
+}
+.foot-circle{
+  width:34px;height:34px;border-radius:50%;
+  background:#5f6368;
+  display:flex;align-items:center;justify-content:center;
+}
+.foot-circle img{width:18px;height:18px;}
+.footer-text{
+  margin:0;
+  font-family:'Open Sans',sans-serif;
+  font-size:13.3333px;
+  color:var(--foot);
+}
+
+/* ============ COOKIE BANNER ============ */
+.cookie-box{
+  position:absolute;
+  left:24px;bottom:150px;
+  z-index:5;
+  width:312px;
+  background:#fff;
+  color:#5f6368;
+  padding:16px 18px;
+  font-family:'Roboto','Open Sans',sans-serif;
+  font-size:12px;
+  line-height:1.5;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.cookie-box p{margin:0 0 8px;}
+.cookie-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:18px;
+  text-transform:uppercase;
+}
+.cookie-learn{color:#1a73e8;font-weight:500;font-size:12px;}
+.cookie-ok{
+  background:none;border:none;cursor:pointer;
+  color:#1a73e8;font-weight:500;font-size:12px;
+  font-family:inherit;text-transform:uppercase;padding:0;
+}
+
+/* ============ NAV DROPDOWNS ============ */
+.nav-cell{position:relative;display:inline-flex;align-items:center;}
+.dropdown{
+  position:absolute;top:100%;left:0;
+  background:#fff;
+  min-width:200px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+  border-radius:2px;
+  padding:8px 0;
+  display:none;
+  z-index:60;
+}
+.nav-cell:hover .dropdown{display:block;}
+.dropdown a{
+  display:block;
+  padding:9px 18px;
+  font-family:'Open Sans',sans-serif;
+  font-weight:600;
+  font-size:14px;
+  color:var(--dark);
+  white-space:nowrap;
+}
+.dropdown a:hover{background:#f2f2f2;}
+
+/* ============ SUB-PAGE BANNER ============ */
+.page-banner{width:100%;line-height:0;background:#1f1f1f;}
+.page-banner img{width:100%;height:auto;display:block;}
+
+/* ============ PAGE BODY ============ */
+.page-body{
+  max-width:var(--content);
+  margin:0 auto;
+  padding:48px 24px 64px;
+}
+.section-heading{
+  margin:38px 0 26px;
+  font-family:'Oswald',sans-serif;
+  font-weight:400;
+  font-size:40px;
+  line-height:1.23;
+  text-transform:uppercase;
+  text-align:center;
+  color:var(--dark);
+}
+.page-body > .section-heading:first-child{margin-top:6px;}
+.page-body .act-text{
+  font-size:18px;
+  line-height:1.6;
+  color:var(--ink);
+  margin:0 0 20px;
+}
+.content-figure{margin:28px auto;text-align:center;}
+.content-figure img{
+  max-width:100%;height:auto;margin:0 auto;
+  display:inline-block;
+}
+.image-row{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;
+  gap:16px;margin:26px 0;
+}
+.image-row img{max-width:100%;height:auto;}
+
+/* member grid (board / órgãos sociais) */
+.member-grid{
+  display:flex;flex-wrap:wrap;justify-content:center;
+  gap:32px 40px;
+  margin:18px 0 34px;
+}
+.member-card{
+  margin:0;text-align:center;
+}
+.member-card img{
+  max-width:100%;height:auto;margin:0 auto 10px;display:block;
+}
+.member-name{
+  font-family:'Oswald',sans-serif;font-weight:500;
+  font-size:18px;text-transform:uppercase;color:var(--dark);
+  margin:0 0 4px;
+}
+.member-role{
+  font-family:'Open Sans',sans-serif;font-size:14px;
+  color:#5f6368;margin:0;
+}
+
+/* embeds (maps / video) */
+.embed{margin:26px 0;}
+.embed iframe{width:100%;height:420px;max-width:640px;display:block;}
+
+/* ============ GEOMETRY CANVAS (sub-pages) ============ */
+.page-banner{width:100%;line-height:0;}
+.page-banner img{width:100%;height:auto;display:block;}
+.page-canvas{
+  position:relative;
+  width:1366px;
+  margin:0 auto;
+  background:#fff;
+}
+.abs{position:absolute;box-sizing:border-box;}
+.txt{
+  margin:0;padding:0;
+  font-family:'Open Sans',sans-serif;
+  white-space:normal;
+  word-wrap:break-word;
+}
+.txt a{color:#1155cc;}
+.page-canvas img{display:block;max-width:none;}
+.foot-soc{display:flex;align-items:center;justify-content:center;}
+.foot-soc img{width:100%;height:100%;object-fit:contain;}
