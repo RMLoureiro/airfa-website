@@ -55,6 +55,12 @@ const COLLAPSIBLES = {
   }],
 };
 
+// "A Banda no Tempo": render the darkened year-photo strips as one pixel-exact image
+// (matches the original's default state); skip the geometry year-text + rules there.
+const TIMELINE = {
+  banda: { img:'assets/timeline/strips.png', x:106, top:2710, w:1154, skipFrom:2705, skipTo:4365 },
+};
+
 // Banner data: render the title as live HTML (fixed font-size) over a cover
 // background image, so the title never scales with window width.
 const BANNERINFO = JSON.parse(fs.readFileSync(path.join(ROOT,'_scrape','bannerinfo.json'),'utf8'));
@@ -121,6 +127,8 @@ function buildPage(slug){
   const d = JSON.parse(fs.readFileSync(path.join(LAY, `${slug}.json`),'utf8'));
   const ANCHOR = ANCHOR_BY_SLUG[slug] || ANCHOR_DEFAULT;
   const cols = COLLAPSIBLES[slug] || [];
+  const tl = TIMELINE[slug];
+  const inTL = (y) => tl && y>tl.skipFrom && y<tl.skipTo;
   const H = d.pageBottom - ANCHOR;
   const parts = [];
 
@@ -135,7 +143,12 @@ function buildPage(slug){
 
   // thin divider lines (coral section separators / heading rules)
   for(const ln of (d.lines||[])){
+    if(inTL(ln.y)) continue;
     parts.push(`<div class="abs" style="left:${ln.x}px;top:${ln.y-ANCHOR}px;width:${ln.w}px;height:${ln.h}px;background:${ln.bg};z-index:1"></div>`);
+  }
+  // "A Banda no Tempo" photo strips (pixel-exact image of the year bands)
+  if(tl){
+    parts.push(`<img class="abs" src="${tl.img}" alt="" style="left:${tl.x}px;top:${tl.top-ANCHOR}px;width:${tl.w}px;height:auto;z-index:1">`);
   }
 
   // dedupe overlapping duplicate text (Google Sites renders headings twice);
@@ -166,6 +179,7 @@ function buildPage(slug){
   for(const e of d.els){
     const top = e.y - ANCHOR;
     if(HINO_LYRICS && e.t==='text' && e.y>=HINO_LYRICS[0] && e.y<=HINO_LYRICS[1]) continue;
+    if(inTL(e.y)) continue;   // covered by the timeline strips image
     if(e.t==='img'){
       let img = `<img src="${e.file}" alt="" style="width:${e.w}px;height:${e.h}px">`;
       if(e.href) img = `<a href="${e.href}" target="_blank" rel="noopener">${img}</a>`;
