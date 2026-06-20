@@ -95,8 +95,18 @@
     content.style.top=(parseFloat(content.getAttribute('data-baset'))+off)+'px';
     recompute();
   }
+  function toggleBand(band){
+    var exp=!band.classList.contains('open');
+    band.classList.toggle('open',exp);
+    var bigh=+band.dataset.bigh;
+    band.src=exp?band.dataset.big:band.dataset.sm;
+    band.style.height=(exp?bigh:150)+'px';
+    active['band'+band.dataset.year]=exp?{thr:parseFloat(band.getAttribute('data-baset')),delta:bigh-150}:null;
+    recompute();
+  }
   document.querySelectorAll('.collap-header').forEach(function(h){ h.addEventListener('click',function(){toggle(h.dataset.collap);}); });
   document.querySelectorAll('.collap-chevron').forEach(function(c){ c.style.cursor='pointer'; c.addEventListener('click',function(){toggle(c.dataset.for);}); });
+  document.querySelectorAll('.tl-band').forEach(function(b){ b.addEventListener('click',function(){toggleBand(b);}); });
 })();
 </script>
 </body>

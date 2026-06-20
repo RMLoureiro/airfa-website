@@ -55,10 +55,18 @@ const COLLAPSIBLES = {
   }],
 };
 
-// "A Banda no Tempo": render the darkened year-photo strips as one pixel-exact image
-// (matches the original's default state); skip the geometry year-text + rules there.
+// "A Banda no Tempo": an accordion of darkened year-photo bands. Each band shows a
+// collapsed strip by default; clicking swaps to the enlarged photo and pushes content
+// below down. Skip the geometry year-text + rules in this region (baked into images).
 const TIMELINE = {
-  banda: { img:'assets/timeline/strips.png', x:106, top:2710, w:1154, skipFrom:2705, skipTo:4365 },
+  banda: {
+    x:106, w:1154, startTop:2710, bandH:150, skipFrom:2705, skipTo:4365,
+    years:[
+      {y:'1902',big:484},{y:'1920',big:448},{y:'1935',big:448},{y:'1948',big:430},
+      {y:'1955',big:430},{y:'1966',big:430},{y:'1980',big:430},{y:'1988',big:430},
+      {y:'1998',big:430},{y:'2010',big:430},{y:'2017',big:430},
+    ],
+  },
 };
 
 // Banner data: render the title as live HTML (fixed font-size) over a cover
@@ -146,9 +154,12 @@ function buildPage(slug){
     if(inTL(ln.y)) continue;
     parts.push(`<div class="abs" style="left:${ln.x}px;top:${ln.y-ANCHOR}px;width:${ln.w}px;height:${ln.h}px;background:${ln.bg};z-index:1"></div>`);
   }
-  // "A Banda no Tempo" photo strips (pixel-exact image of the year bands)
+  // "A Banda no Tempo" accordion: clickable year bands (collapsed strip -> enlarged photo)
   if(tl){
-    parts.push(`<img class="abs" src="${tl.img}" alt="" style="left:${tl.x}px;top:${tl.top-ANCHOR}px;width:${tl.w}px;height:auto;z-index:1">`);
+    tl.years.forEach((yr,i)=>{
+      const btop = tl.startTop + i*tl.bandH - ANCHOR;
+      parts.push(`<img class="abs tl-band" src="assets/timeline/sm_${yr.y}.png" alt="${yr.y}" data-year="${yr.y}" data-sm="assets/timeline/sm_${yr.y}.png" data-big="assets/timeline/big_${yr.y}.png" data-bigh="${yr.big}" style="left:${tl.x}px;top:${btop}px;width:${tl.w}px;height:${tl.bandH}px;object-fit:cover;cursor:pointer;z-index:1">`);
+    });
   }
 
   // dedupe overlapping duplicate text (Google Sites renders headings twice);
@@ -251,7 +262,7 @@ ${header(d.active||slugActive(slug))}
 ${banner}
 ${canvas}
 ${COOKIE}
-${cols.length ? COLLAP_JS : ''}
+${(cols.length || tl) ? COLLAP_JS : ''}
 </body>
 </html>
 `;
@@ -284,8 +295,18 @@ const COLLAP_JS = `<script>
     content.style.top=(parseFloat(content.getAttribute('data-baset'))+off)+'px';
     recompute();
   }
+  function toggleBand(band){
+    var exp=!band.classList.contains('open');
+    band.classList.toggle('open',exp);
+    var bigh=+band.dataset.bigh;
+    band.src=exp?band.dataset.big:band.dataset.sm;
+    band.style.height=(exp?bigh:150)+'px';
+    active['band'+band.dataset.year]=exp?{thr:parseFloat(band.getAttribute('data-baset')),delta:bigh-150}:null;
+    recompute();
+  }
   document.querySelectorAll('.collap-header').forEach(function(h){ h.addEventListener('click',function(){toggle(h.dataset.collap);}); });
   document.querySelectorAll('.collap-chevron').forEach(function(c){ c.style.cursor='pointer'; c.addEventListener('click',function(){toggle(c.dataset.for);}); });
+  document.querySelectorAll('.tl-band').forEach(function(b){ b.addEventListener('click',function(){toggleBand(b);}); });
 })();
 </script>`;
 function slugActive(slug){
