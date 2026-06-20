@@ -222,8 +222,14 @@ function buildPage(slug){
   }
 
   if(HINO_LYRICS){
-    const top = 2780 - ANCHOR;
-    parts.push(`<div class="abs txt" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;color:#5f6368;z-index:2">Letra do hino — disponível na <a href="https://sites.google.com/view/airfa-desde-1895-copia/a-academia/hino" target="_blank" rel="noopener">versão original</a>.</div>`);
+    // Layout is ready for the anthem verses — paste them into the container below
+    // (one <p> per stanza). Centred, 18px, matching the original's lyric block.
+    const top = 2676 - ANCHOR;
+    parts.push(`<div class="abs txt" id="hino-letra" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;line-height:1.7;color:#2e3d4c;z-index:2">
+<!-- ===== LETRA DO HINO: cole aqui as estrofes (um <p> por estrofe) ===== -->
+<p style="font-style:italic;color:#9aa0a6">[Letra do hino — cole as estrofes aqui]</p>
+<!-- ===== fim da letra ===== -->
+</div>`);
   }
 
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
