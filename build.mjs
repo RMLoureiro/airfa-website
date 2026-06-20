@@ -31,6 +31,24 @@ const TITLES = { 'a-academia':'A Academia','historia':'História','estatutos':'E
 
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+// Collapsible widgets (Google Sites "collapsible text"): rendered collapsed by
+// default with a chevron; click expands the content and pushes content below down.
+const COLLAPSIBLES = {
+  banda: [{
+    header: 'MAESTRO FRANCISCO PINTO',
+    id: 'collap-maestro',
+    delta: 308, shiftAbove: 2300, left: 114, top: 2326, width: 842,
+    style: "font-family:'Open Sans',sans-serif;font-size:13.3333px;line-height:16px;color:rgb(46,61,76)",
+    paras: [
+      'Francisco Pereira Pinto nasceu a 23 de Abril de 1964 em Guimarães. Aos 13 anos de idade começou os seus estudos musicais na filarmónica das Caldas das Taipas. Continuou a desenvolver a sua aprendizagem no Conservatório de Música da Fundação Calouste Gulbenkian em Braga.',
+      'Em 1983, fez concurso para admissão na Banda da Guarda Nacional Republicana, onde presentemente tem o posto de sargento-mor.',
+      'Concluiu o curso de Clarinete no Conservatório em Lisboa, tendo como professores: António Saiote, Jorge Trindade e Manuel Jerónimo, em Clarinete; Salomé Leal, em Formação Musical; Paulo Brandão, Jorge Peixinho e Eurico Carrapatoso, em Análise e Técnicas de Composição; Francisco Melo, em Acústica; Fernanda Melo, em História da Música e Peres Newton em Música de Câmara.',
+      'Frequentou em 1990, em Setúbal um curso de Música de Câmara orientado pela Pianista Olga Prats. Participou em várias orquestras, nomeadamente: Orquestra Sinfónica Juvenil, Orquestra Portuguesa da Juventude, Orquestra das Escolas Particulares e Orquestra "os insólitos". É membro fundador do Quarteto de Clarinetes Chalumeau, onde já actuou por todo o País e Arquipélago dos Açores onde ministrou cursos de aperfeiçoamento de Clarinetistas. Leccionou ainda Clarinete na Academia Luisa Todi em Setúbal e no Conservatório Silva Marques em Alhandra.',
+      'Em 2008, foi condecorado pela Câmara Municipal do Seixal com a medalha de mérito cultural. No campo do ensino da Música em Colectividades, dirigiu a Banda da Sociedade Filarmónica Timbre Seixalense, a Banda da Sociedade Filarmónica da Gançaria, a Banda da Sociedade Filarmónica Gualdim Pais de Tomar e a Orquestra do Clube Recreativo da Cruz de Pau. Actualmente dirige a Banda da Associação Desportiva e Recreativa "o Paraíso", em Vale do Paraíso, Azambuja, e a Banda Filarmónica da Academia de Instrução e Recreio Familiar Almadense.',
+    ],
+  }],
+};
+
 // Banner data: render the title as live HTML (fixed font-size) over a cover
 // background image, so the title never scales with window width.
 const BANNERINFO = JSON.parse(fs.readFileSync(path.join(ROOT,'_scrape','bannerinfo.json'),'utf8'));
@@ -96,6 +114,7 @@ function textHtml(e){
 function buildPage(slug){
   const d = JSON.parse(fs.readFileSync(path.join(LAY, `${slug}.json`),'utf8'));
   const ANCHOR = ANCHOR_BY_SLUG[slug] || ANCHOR_DEFAULT;
+  const cols = COLLAPSIBLES[slug] || [];
   const H = d.pageBottom - ANCHOR;
   const parts = [];
 
@@ -163,8 +182,21 @@ function buildPage(slug){
       const oneLine = e.h <= lh*1.6;                 // single-line text must not wrap
       const ws = oneLine ? ';white-space:nowrap' : '';
       const wrule = oneLine ? `min-width:${e.w}px` : `width:${e.w}px`;
-      parts.push(`<div class="abs txt" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)};z-index:2">${textHtml(e)}</div>`);
+      const col = cols.find(c=>c.header===e.text.trim());
+      if(col){
+        parts.push(`<div class="abs txt collap-header" data-collap="${col.id}" data-delta="${col.delta}" data-thr="${col.shiftAbove-ANCHOR}" style="left:${e.x}px;top:${top}px;min-width:${e.w}px;white-space:nowrap;${styleStr(e)};z-index:4;cursor:pointer">${textHtml(e)}</div>`+
+          `<div class="abs collap-chevron" data-for="${col.id}" style="left:1190px;top:${top}px;z-index:4">&#9662;</div>`);
+      } else {
+        parts.push(`<div class="abs txt" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)};z-index:2">${textHtml(e)}</div>`);
+      }
     }
+  }
+
+  // hidden collapsible content blocks
+  for(const col of cols){
+    const ctop = col.top - ANCHOR;
+    const inner = col.paras.map(p=>`<p style="margin:0 0 14px">${esc(p)}</p>`).join('');
+    parts.push(`<div id="${col.id}" class="abs collap-content" style="display:none;left:${col.left}px;top:${ctop}px;width:${col.width}px;${col.style};z-index:2">${inner}</div>`);
   }
 
   if(HINO_LYRICS){
@@ -191,10 +223,43 @@ ${header(d.active||slugActive(slug))}
 ${banner}
 ${canvas}
 ${COOKIE}
+${cols.length ? COLLAP_JS : ''}
 </body>
 </html>
 `;
 }
+const COLLAP_JS = `<script>
+(function(){
+  var canvas=document.querySelector('.page-canvas'); if(!canvas) return;
+  var els=[].slice.call(canvas.children);
+  els.forEach(function(el){ el.setAttribute('data-baset', parseFloat(el.style.top)||0); });
+  var h0=parseFloat(canvas.style.height); var active={};
+  function recompute(){
+    var extra=0; for(var k in active) extra+=active[k]?active[k].delta:0;
+    els.forEach(function(el){
+      if(el.classList.contains('collap-content')) return;
+      var base=parseFloat(el.getAttribute('data-baset')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<base) off+=a.delta; }
+      el.style.top=(base+off)+'px';
+    });
+    canvas.style.height=(h0+extra)+'px';
+  }
+  function toggle(id){
+    var h=document.querySelector('.collap-header[data-collap="'+id+'"]');
+    var content=document.getElementById(id);
+    var exp=content.style.display==='none';
+    content.style.display=exp?'block':'none';
+    h.classList.toggle('expanded',exp);
+    // position content accounting for collapsibles above it
+    var off=0; for(var k in active){ var a=active[k]; if(a && a.thr<parseFloat(content.getAttribute('data-baset'))) off+=a.delta; }
+    active[id]=exp?{thr:+h.dataset.thr,delta:+h.dataset.delta}:null;
+    content.style.top=(parseFloat(content.getAttribute('data-baset'))+off)+'px';
+    recompute();
+  }
+  document.querySelectorAll('.collap-header').forEach(function(h){ h.addEventListener('click',function(){toggle(h.dataset.collap);}); });
+  document.querySelectorAll('.collap-chevron').forEach(function(c){ c.style.cursor='pointer'; c.addEventListener('click',function(){toggle(c.dataset.for);}); });
+})();
+</script>`;
 function slugActive(slug){
   if(['historia','estatutos','orgaos-sociais','hino','biblioteca','documentos','a-academia'].includes(slug)) return 'a-academia';
   if(['cine-teatro','sala-de-cinema','salas-de-espetaculo'].includes(slug)) return 'salas';
