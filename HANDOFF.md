@@ -6,10 +6,26 @@ A pixel-faithful static reproduction of the AIRFA Google Site
 
 ## How to run
 ```bash
-cd /home/loureiro/dev/airfa-website
+cd <repo root>
 python3 -m http.server 8765 --bind 127.0.0.1   # then open http://127.0.0.1:8765/
 ```
 Open `index.html` directly in a browser too — everything is static.
+
+### Visual QA against the original (no Node required)
+The replica can be diffed against the live Google Site with Chrome headless:
+```bash
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"   # macOS path
+"$CHROME" --headless --disable-gpu --hide-scrollbars --window-size=1366,6000 \
+  --screenshot=out.png --virtual-time-budget=9000 "<url>"
+```
+Original page URLs (note the accented slugs): `/a-academia`, `/a-academia/história`,
+`/a-academia/estatutos`, `/a-academia/orgãos-sociais`, `/a-academia/hino`,
+`/a-academia/biblioteca`, `/a-academia/documentos`, `/actividades`, `/banda`,
+`/salas-de-espetáculo`, `/salas-de-espetáculo/cine-teatro`,
+`/salas-de-espetáculo/sala-de-cinema`, `/contactos` — all under
+`https://sites.google.com/view/airfa-desde-1895-copia`. Crop with `sips -c <h> <w>
+--cropOffset <y> <x> in.png --out crop.png`. Sub-page element screen_y = 341 +
+canvas_top (56px header + 285px banner).
 
 ## Architecture
 - **`index.html`** — homepage, hand-built and pixel-matched (hero, auto-rotating
@@ -65,12 +81,64 @@ cine-teatro 4.9%, sala-de-cinema 6.6%, contactos 6.5%. (Higher numbers are the
 image-heavy pages — banner photo + tables + timeline photos recompress, so many
 pixels differ slightly while looking identical.)
 
+## FIXES APPLIED — 2026-06-20 (session 2)
+All edits were made to the **committed generated HTML** (and `styles.css`), NOT to
+`build.mjs`, because the `_scrape/layout/*.json` files and Node are not available in
+this environment, so `build.mjs` cannot be re-run here. The committed HTML is now the
+authoritative source. ⚠️ See "Regeneration caveat" below before ever running
+`node build.mjs` again — it would REGRESS several of these fixes.
+
+1. **Actividades — two missing red section banners.** "MODALIDADES DESPORTIVAS" and
+   "ACTIVIDADES CULTURAIS" existed as white text but had no red background rectangle
+   behind them (white-on-white = invisible). Added two full-width red bars
+   (`left:0;width:1366px;height:126px;background:var(--red)`) at `top:140` and
+   `top:1680`, z-index:1 (behind the white titles). Measured from the original:
+   bar = rgb(211,65,63), 126px tall, ~32px padding around the 62.32px text line.
+   `actividades.html` lines ~21 and ~24.
+2. **Cine-teatro — overlapping paragraph.** Two `<div>`s were both positioned at
+   `top:932px`, stacking on top of each other. They are a single paragraph in the
+   original; merged into one div (`width:1138px`): "O requalificado Cine-Teatro foi
+   inaugurado a 13 de Setembro de 2014. A 07 de Abril de 2019 foi atribuído o nome
+   de Auditório Osvaldo Azinheira…". `cine-teatro.html` line ~23.
+3. **Banda — maestro section had no "clickable" affordance.** In the original, the
+   "MAESTRO FRANCISCO PINTO" header shows a chevron beside the title and a grey
+   divider line under it. The replica had the chevron mispositioned (`left:1190`,
+   floating near the photo) and no divider. Moved the chevron to `left:930;top:1899`
+   and added a divider `left:106;top:1953;width:858px;height:1px;background:rgb(94,94,94)`
+   (measured: line spans x106–963, screen y1953). The divider has base-top 1953 <
+   the maestro `data-thr` 1959, so the reflow JS correctly leaves it under the title
+   when the bio expands. `banda.html` line ~44.
+4. **Hino — lyrics now formatted to match the original.** The verses were pasted in
+   as one grey italic `<p>` with no line breaks (collapsed into running text). Re-laid
+   out as 4 stanzas × 4 lines, one `<p>` per stanza with `<br>` between lines,
+   `font-size:18.6667px;line-height:29.8667px;font-style:italic;color:rgb(33,33,33)`,
+   ~16px gap between stanzas. Container stays at `top:2335`. `hino.html` `#hino-letra`.
+5. **Footer copyright year truncated on every sub-page.** All 13 sub-pages read
+   "…Almadense 202" (missing the "5"). Fixed to "…Almadense 2025" (matches the
+   original and `index.html`). The "202" came from the clipped scraped text node.
+6. **Footer social icons invisible on every sub-page.** The icon PNGs are white
+   glyphs; `.foot-soc` had no background, so they vanished on the white footer.
+   Added a grey circle to `.foot-soc` in `styles.css`
+   (`background:#5f6368;border-radius:50%`) and sized the icon to 15px — matching the
+   original's grey circular buttons (and the homepage's `.foot-circle`).
+
+### Regeneration caveat (READ before running `node build.mjs`)
+`build.mjs` reads geometry from `_scrape/layout/<slug>.json` (gitignored, absent).
+Re-running it would overwrite the committed HTML and **regress fixes 1–5**, because
+that page-specific data lives in the JSONs, not in the committed HTML:
+- The actividades red bars rely on a `box` field on those two text elements
+  (build.mjs already supports `e.box`, line ~207 — the scrape simply didn't capture
+  the section background). Re-scrape must record it.
+- The cine-teatro merged paragraph, the footer "2025" text, and the hino lyrics are
+  text-node content in the JSON.
+- The maestro chevron is emitted at a hard-coded `left:1190px` (build.mjs line ~219)
+  and **no divider is generated at all**. To reproduce fix 3 from source, update the
+  generator to position the chevron at the content-right edge and emit a divider rule.
+Fix 6 (`styles.css`) is safe — it is not regenerated.
+
 ## KNOWN ISSUES / REMAINING WORK
-1. **Hino verses not filled in.** The page is fully built (composer/lyricist photos,
-   names, intro, score, both videos) with a ready-to-fill container in `hino.html`
-   (`id="hino-letra"`, marked with a `cole aqui as estrofes` comment). The verses
-   themselves must be pasted in there by the site owner (one `<p>` per stanza).
-   I did not transcribe them.
+1. ~~**Hino verses not filled in.**~~ DONE — see fix 4 above. Verses are transcribed
+   and formatted in `hino.html` (`id="hino-letra"`).
 2. **Textured banner backgrounds — framing slightly off.** On the parchment-family
    pages (a-academia, historia, estatutos, biblioteca) and contactos/documentos, the
    banner BACKGROUND image crop/zoom differs a little from the original. The original
