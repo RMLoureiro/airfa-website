@@ -31,6 +31,24 @@ const TITLES = { 'a-academia':'A Academia','historia':'História','estatutos':'E
 
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+// Banner data: render the title as live HTML (fixed font-size) over a cover
+// background image, so the title never scales with window width.
+const BANNERINFO = JSON.parse(fs.readFileSync(path.join(ROOT,'_scrape','bannerinfo.json'),'utf8'));
+const UNDERLINES = JSON.parse(fs.readFileSync(path.join(ROOT,'_scrape','underlines.json'),'utf8'));
+function bannerHtml(slug, anchor){
+  const info = BANNERINFO[slug] || {};
+  const ul = (UNDERLINES[slug]||{}).underline;
+  const H = anchor - 56;                       // banner height below the 56px header
+  const titleTop = (info.titleY||140) - 56;
+  const bg = info.bgFile
+    ? `<div class="banner-bg" style="inset:0;background-image:url('${info.bgFile}');background-position:${info.bgPos||'50% 50%'}"></div>` : '';
+  const rule = ul
+    ? `<div class="banner-rule" style="top:${ul.y}px;width:${ul.w}px;height:${Math.min(4,ul.h)||3}px"></div>` : '';
+  const ff = (info.tFf||"'Oswald'").replace(/"/g,"'");
+  const title = `<h1 class="banner-title" style="top:${titleTop}px;font-size:${info.tFs};color:${info.tColor};font-family:${ff};font-weight:${info.tWeight};text-transform:${info.tTransform};letter-spacing:${info.tLs};line-height:${info.tLh}">${esc(info.title||TITLES[slug])}</h1>`;
+  return `<section class="page-banner" style="height:${H}px">${bg}${rule}${title}</section>`;
+}
+
 function header(active){
   const items = NAV.map(n=>{
     const cls = 'nav-item'+(n.key===active?' active':'')+(n.sub?' has-sub':'');
@@ -155,7 +173,7 @@ function buildPage(slug){
   }
 
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
-  const banner = `<section class="page-banner"><img src="assets/banners/${slug}.png" alt="${esc(TITLES[slug])}"></section>`;
+  const banner = bannerHtml(slug, ANCHOR);
   const title = `AIRFA - ${TITLES[slug]||''}`;
   return `<!DOCTYPE html>
 <html lang="pt-PT">

@@ -279,8 +279,14 @@ a{color:inherit;text-decoration:none;}
 .dropdown a:hover{background:#f2f2f2;}
 
 /* ============ SUB-PAGE BANNER ============ */
-.page-banner{width:100%;line-height:0;background:#1f1f1f;}
-.page-banner img{width:100%;height:auto;display:block;}
+.page-banner{position:relative;width:100%;overflow:hidden;background:#fff;}
+.banner-bg{position:absolute;left:0;width:100%;background-size:cover;background-repeat:no-repeat;}
+.banner-rule{position:absolute;left:50%;transform:translateX(-50%);background:#ff5252;z-index:1;}
+.banner-title{
+  position:absolute;left:0;width:100%;margin:0;
+  text-align:center;white-space:nowrap;z-index:2;
+  font-family:'Oswald',sans-serif;
+}
 
 /* ============ PAGE BODY ============ */
 .page-body{
@@ -343,8 +349,6 @@ a{color:inherit;text-decoration:none;}
 .embed iframe{width:100%;height:420px;max-width:640px;display:block;}
 
 /* ============ GEOMETRY CANVAS (sub-pages) ============ */
-.page-banner{width:100%;line-height:0;}
-.page-banner img{width:100%;height:auto;display:block;}
 .page-canvas{
   position:relative;
   width:1366px;
