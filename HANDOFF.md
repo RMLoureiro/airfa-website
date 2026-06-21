@@ -136,23 +136,111 @@ that page-specific data lives in the JSONs, not in the committed HTML:
   generator to position the chevron at the content-right edge and emit a divider rule.
 Fix 6 (`styles.css`) is safe — it is not regenerated.
 
+Session-3 additions that `build.mjs` would ALSO regress: the per-page `.banner-bg`
+geometry (`left:0;right:0;bottom:0;height:341px` instead of `inset:0`) and the
+documentos title/rule offsets. To reproduce from source, make the generator emit the
+banner bg as a 341px-tall (or `bannerHeight+56`) bottom-anchored layer rather than
+`inset:0`. The homepage hero fix is `styles.css` only (safe — `index.html` is hand-built,
+not generated).
+
+## FIXES APPLIED — 2026-06-21 (session 3)
+1. **Homepage hero banner — coral line + framing.** Three problems (all `styles.css`
+   `.hero*`): (a) the coral accent rendered as a *strikethrough* through the title
+   because `.hero-title::before` was at `top:50%` — moved to `top:calc(100% + 6px)`
+   so it is an UNDERLINE below "ACADEMIA ALMADENSE" (matches the original; the colour
+   `#ff5252` and width `--content` were already correct). (b) Hero was a fixed
+   `840px`; the original banner is a full-viewport `100vh` image *behind* the header.
+   Changed to `height:100vh;margin-top:-56px` so the photo spans the whole viewport
+   and its top 56px sit under the sticky white header — pixel-matches the original and
+   is responsive. (c) Focal `center 42%` → `center 50%`. The hero image
+   (`assets/hero-theater.jpg`) was already byte-identical to the original's banner.
+2. **Sub-page banner backgrounds — RESOLVED issue 2 (the 56px-header-overlap crop).**
+   Root cause was NOT a wrong source image (every downloaded original banner is now
+   byte-identical to ours) — it was the crop geometry. The original small banner is a
+   **340px-tall** `cover`/`50% 50%` image whose **top 56px are hidden behind the
+   header**; the replica was fitting `cover` to the 285px box *below* the header, so
+   the crop landed ~28px too high. Fix: on each affected `.banner-bg`, replace
+   `inset:0` with `left:0;right:0;bottom:0;height:341px` — the bg is now `cover`-fit to
+   341px and bottom-anchored, so `overflow:hidden` on `.page-banner` clips the top 56px
+   exactly like the header does. Applied to: a-academia, historia, estatutos,
+   biblioteca, contactos, orgaos-sociais, hino, sala-de-cinema, and documentos
+   (documentos also had its title/rule nudged +50px to `top:414`/`518` to match, and
+   uses `height:896px` = its 840px banner + 56). Verified each against the live site
+   (mean banner-region diff dropped from ~27→~10 for the parchment pages). The
+   `=w2000` lh3 URL trick downloads the real bg: read the element's computed
+   `background-image` `googleusercontent` URL from the live DOM, then `curl` it (tokens
+   expire in ~minutes, so probe-and-download in one pass).
+   - **Left as-is (already optimal):** cine-teatro (already 2% diff), banda (its image
+     has no vertical crop slack — position-y is a no-op; the ~big residual is JPEG
+     recompression of a busy group photo), salas-de-espetáculo (a position sweep
+     confirmed the existing `50% 100%` is the true minimum). Don't "fix" these — the
+     anchor change made salas measurably worse.
+
+## PIXEL AUDIT — 2026-06-21 (session 3) → see `PIXEL_DIFF.md`
+A full pixel-by-pixel audit of all 14 pages vs. the live site was run after the banner
+fixes. Full report with evidence + severities is in **`PIXEL_DIFF.md`** (repo root). It found
+**8 remaining differences** (verified by hand; agent false-positives discarded). The list
+below is the actionable TODO for the next agent.
+
+### Audit tooling (reusable, lives in gitignored `_scrape/`)
+- `_scrape/cmp_shot.mjs <url> <out.png> 1366` — full-page screenshot with lazy-load scroll
+  (puppeteer-core + `/usr/bin/google-chrome-stable`). Use for BOTH local
+  (`http://127.0.0.1:8765/<page>`) and the live original.
+- `_scrape/banddiff.py LOCAL.png ORIG.png OUTPREFIX 360` — slices both into LABELED vertical
+  bands (top=our copy, bottom=original) + prints per-band meandiff (REVIEW if >10).
+- `_scrape/AUDIT_METHOD.md` — the exact method handed to the audit subagents (incl. the
+  local↔original URL map with the accented/encoded slugs).
+- Serve locally first: `python3 -m http.server 8765 --bind 127.0.0.1`.
+- ⚠️ Subagents over-report (false "coral rule missing", "icons smaller") AND under-report
+  (one missed the historia overlap). ALWAYS re-verify each finding yourself with a full-res
+  zoom crop of BOTH images before acting.
+
+### REMAINING DIFFERENCES TO FIX (priority order)
+1. **[Alta] historia — citação sobreposta/ilegível.** `historia.html` lines 40–42: three
+   abs divs (`top:1661` nowrap, `top:1661` width:1138, `top:1687` nowrap) render the quote
+   "Mesmo após o sucesso do 1º aniversário… - há muito anos atrás." overlapping. FIX: merge
+   into ONE `width:1138px` div (no `white-space:nowrap`), like the cine-teatro fix.
+2. **[Média] Régua/sublinhado coral fino demais — ~4–5px vs ~12px.** Affects every banner.
+   Sub-pages: each `.banner-rule` inline style has `height:4px` → change to `height:12px`
+   (all 13 sub-page HTML; same `top`, original spans y244–255). Homepage: `styles.css:96`
+   `.hero-title::before{height:5px}` → `12px` (tighten its `top:calc(100% + 6px)` if needed).
+3. **[Média] Header logo too bold.** `styles.css:37` `.brand-title{font-weight:600}` →
+   `300` (or `400`); original is light weight, slightly larger/wider.
+4. **[Média] documentos — banner ~104px too short.** Our banner ends y896 vs original y1000.
+   `documentos.html` banner section is `height:840px` → raise to ~`944px`, and bump its
+   `.banner-bg` `height:896px` accordingly (~`1000px`). Title/rule positions already match
+   (top:414 / 518) and ride along. Content below then shifts down to match.
+5. **[Baixa] Collapsible chevron is a filled triangle ▼, original is an outline chevron ⌄.**
+   The `.chevron` glyph `&#9662;` in `banda.html:44` and `historia.html:62` (do NOT touch the
+   nav carets `&#9662;` on line 15 — those match). Replace with an outline chevron (SVG or a
+   Material `expand_more` icon).
+6. **[Baixa] estatutos — missing trailing period.** "Pode consultar os estatutos aqui" → add
+   "." after the `aqui` link (`estatutos.html`, the intro line near top of the canvas).
+7. **[Baixa] hino — 2020 caption missing trailing colon.** `hino.html` caption split across
+   abs divs at `top:2982`; the last fragment `>20</div>` → `>20:</div>` (the 2012 caption at
+   `top:1773` correctly ends with ":").
+8. **[Baixa] actividades — "Descontos" list has no bullet markers.** `actividades.html` from
+   line ~29 the list items ("Pagamento anual…", "Inscrito em 2 ou mais…", etc.) are plain abs
+   divs; original shows "•" bullets. Prepend a bullet glyph or restyle as a list.
+
+⚠️ All of the above are in COMMITTED HTML / `styles.css` and would be REGRESSED by
+`node build.mjs` (see Regeneration caveat). Fixing them at source means editing `build.mjs`.
+
+### Uncommitted state at end of session 3
+Modified (not yet committed): `styles.css` + 9 sub-page HTML (a-academia, biblioteca,
+contactos, documentos, estatutos, hino, historia, orgaos-sociais, sala-de-cinema) + this
+`HANDOFF.md`. New: `PIXEL_DIFF.md`. The user prefers commits WITHOUT a Claude co-author trailer.
+
 ## KNOWN ISSUES / REMAINING WORK
-1. ~~**Hino verses not filled in.**~~ DONE — see fix 4 above. Verses are transcribed
-   and formatted in `hino.html` (`id="hino-letra"`).
-2. **Textured banner backgrounds — framing slightly off.** On the parchment-family
-   pages (a-academia, historia, estatutos, biblioteca) and contactos/documentos, the
-   banner BACKGROUND image crop/zoom differs a little from the original. The original
-   serves the banner bg via stacked/lazy image versions whose tokens change on every
-   load, so the exact pre-framed source image couldn't be reliably downloaded. The
-   title + overlay are correct; only the bg framing differs. FIX: download those
-   banner bg images from the Sites editor and drop into `assets/banner-bg/<slug>.<ext>`,
-   then rebuild. Photo banners that loaded cleanly (banda, cine-teatro, salas) match.
+1. ~~**Hino verses not filled in.**~~ DONE — see session-2 fix 4.
+2. ~~**Textured banner backgrounds — framing slightly off.**~~ DONE — see session-3
+   fix 2 above. All source images were correct; it was the 56px-header crop geometry.
 3. **Pixel-perfection is tuned to 1366px width.** Sub-pages use absolute positioning
    anchored to 1366. They are NOT responsive/reflowing for arbitrary widths (the
    original Google Site is responsive). Titles are fixed-size so they don't balloon,
    but full responsive reflow is not implemented.
-4. **Higher-diff pages** (documentos/actividades/banda) are dominated by image
-   recompression, but worth a final eyeball against the live site.
+4. **Final eyeball done** — full pixel audit complete; see `PIXEL_DIFF.md` and the
+   "REMAINING DIFFERENCES TO FIX" list above. The 8 items there are the outstanding work.
 5. **`_scrape/` is gitignored** — the layout JSONs needed by `build.mjs` live there.
    If someone clones fresh, the generated `*.html` are committed and work standalone,
    but re-running `build.mjs` needs the `_scrape/layout/*.json` files (regenerate via
