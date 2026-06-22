@@ -1,0 +1,6 @@
+node_modules/
+_scrape/
+.git/
+*.md
+build.mjs
+package*.json
