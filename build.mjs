@@ -29,6 +29,61 @@ const TITLES = { 'a-academia':'A Academia','historia':'História','estatutos':'E
   'actividades':'Actividades','banda':'Banda','salas-de-espetaculo':'Salas de Espetáculo',
   'cine-teatro':'Cine-Teatro','sala-de-cinema':'Sala de Cinema','contactos':'Contactos' };
 
+// ===== SEO =====
+const SITE = 'https://airfa.pt';
+const ORG_NAME = 'Academia de Instrução e Recreio Familiar Almadense';
+// Per-page meta descriptions (~150 chars). Every description repeats the official
+// name + the "Academia Almadense"/"AIRFA" variants people actually search for.
+const DESCRIPTIONS = {
+  'a-academia':'Conheça a Academia de Instrução e Recreio Familiar Almadense (AIRFA, Academia Almadense): história, estatutos, órgãos sociais e atividades em Almada desde 1895.',
+  'historia':'História da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), colectividade fundada em 1895 em Almada.',
+  'estatutos':'Estatutos da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'orgaos-sociais':'Órgãos sociais da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'hino':'Hino da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), colectividade almadense desde 1895.',
+  'biblioteca':'Biblioteca da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'documentos':'Documentos da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'actividades':'Atividades e eventos da Academia Almadense (AIRFA): desporto, cultura e formação na Academia de Instrução e Recreio Familiar Almadense, em Almada.',
+  'banda':'Banda Filarmónica da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), com mais de um século de história em Almada.',
+  'salas-de-espetaculo':'Salas de espetáculo da Academia Almadense (AIRFA): Cine-Teatro e Sala de Cinema da Academia de Instrução e Recreio Familiar Almadense, em Almada.',
+  'cine-teatro':'Cine-Teatro da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'sala-de-cinema':'Sala de Cinema da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense), em Almada.',
+  'contactos':'Contactos da Academia de Instrução e Recreio Familiar Almadense (AIRFA / Academia Almadense): Rua Capitão Leitão nº64, 2800-068 Almada. Tel. 212 729 750.',
+};
+// Organization structured data — emitted on every page so Google ties the whole
+// site to one entity. alternateName carries every spelling people search for.
+const ORG_JSONLD = JSON.stringify({
+  '@context':'https://schema.org','@type':'Organization',
+  name: ORG_NAME,
+  alternateName:['AIRFA','Academia Almadense','Academia de Recreio e Instrução Familiar Almadense'],
+  url: SITE + '/',
+  logo: SITE + '/assets/crest.png',
+  image: SITE + '/assets/hero-theater.jpg',
+  foundingDate:'1895',
+  email:'academia.almadense@gmail.com',
+  telephone:'+351212729750',
+  address:{'@type':'PostalAddress',streetAddress:'Rua Capitão Leitão, nº64',postalCode:'2800-068',addressLocality:'Almada',addressCountry:'PT'},
+  sameAs:['https://www.facebook.com/AcademiaAlmadense','https://instagram.com/academia.almadense/','https://youtube.com/user/AcademiaAlmadense'],
+});
+function seoHead(slug, title, desc){
+  const url = `${SITE}/${slug}.html`;
+  const img = `${SITE}/assets/hero-theater.jpg`;
+  return `<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Academia Almadense (AIRFA)">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${img}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${img}">
+<script type="application/ld+json">${ORG_JSONLD}</script>`;
+}
+
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
 // Collapsible widgets (Google Sites "collapsible text"): rendered collapsed by
@@ -245,13 +300,15 @@ function buildPage(slug){
 
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
   const banner = bannerHtml(slug, ANCHOR);
-  const title = `AIRFA - ${TITLES[slug]||''}`;
+  const title = `${TITLES[slug]||''} | Academia Almadense (AIRFA)`;
+  const desc = DESCRIPTIONS[slug] || `${ORG_NAME} (AIRFA / Academia Almadense), em Almada desde 1895.`;
   return `<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
+${seoHead(slug, title, desc)}
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
