@@ -231,6 +231,257 @@ Modified (not yet committed): `styles.css` + 9 sub-page HTML (a-academia, biblio
 contactos, documentos, estatutos, hino, historia, orgaos-sociais, sala-de-cinema) + this
 `HANDOFF.md`. New: `PIXEL_DIFF.md`. The user prefers commits WITHOUT a Claude co-author trailer.
 
+## FIXES APPLIED — 2026-06-21 (session 4) — ALL 8 audit items DONE
+All 8 differences from the session-3 `PIXEL_DIFF.md` "REMAINING DIFFERENCES TO FIX" list
+were fixed in the committed HTML/CSS and **verified by full-resolution zoom (local vs. live
+original)**. A 9th was found during verification and also fixed. Full final report:
+**`PIXEL_AUDIT_FINAL.md`**. Summary:
+1. **[Alta] historia** — overlapping quote (`white-space:nowrap` ×3) merged into one
+   `width:1138px` div; now wraps cleanly. `historia.html` ~line 40.
+2. **[Média] coral rule** — `height:4px→12px` on every `.banner-rule` (13 sub-pages) and
+   `.hero-title::before` `5px→12px` (`styles.css`).
+3. **[Média] header logo** — `.brand-title{font-weight:600→300}` (`styles.css:37`).
+4. **[Média] documentos banner** — section `840→944px`, `.banner-bg` `896→1000px`; content
+   below now aligns (total height 1642 vs orig 1638).
+5. **[Baixa] estatutos** — added trailing "." after the `aqui` link.
+6. **[Baixa] hino** — 2020 caption fragment `>20<` → `>20:<`.
+7. **[Baixa] actividades** — added bullet markers to the "Descontos" list.
+8. **[Baixa] chevron** — filled ▼ → outline chevron SVG in `.collap-chevron` only
+   (`banda.html`, `historia.html`); nav carets untouched.
+9. **[Baixa] actividades (NEW)** — bullets were round "•"; original uses **square "▪"** → changed.
+
+New audit tool added: `_scrape/capboth.mjs` (captures both local + original sides for a slug).
+⚠️ All session-4 edits are in committed HTML/CSS and would be REGRESSED by `node build.mjs`.
+
+## FIXES APPLIED — 2026-06-21 (session 5) — full fresh re-review
+Re-reviewed ALL 14 pages/elements with 5 parallel subagents + manual pixel re-verification
+(see the rewritten **`PIXEL_DIFF.md`**). Confirmed the session-4 fixes held (estatutos period &
+actividades bullets were agent false-positives — already fixed) and found + fixed 5 NEW real
+differences:
+1. **Nav active "pill" on dropdown parents (child pages).** The original does NOT highlight the
+   parent (`A Academia` / `Salas de Espetáculo`) on a child page — only on the parent's OWN page.
+   Removed `active` from the parent nav item on the 8 child pages (historia, estatutos,
+   orgaos-sociais, hino, biblioteca, documentos, cine-teatro, sala-de-cinema). This also fixed
+   the nav's horizontal alignment (the extra pill width was pushing the right-aligned nav left).
+   Kept `active` on a-academia.html / salas-de-espetaculo.html and the direct pages.
+2. **Nav dropdown caret** filled triangle `&#9662;` → outline chevron SVG (`stroke-width:3`) in
+   all 14 pages; `.caret` CSS now inline-flex, `opacity:.85`.
+3. **Homepage vertical geometry (hero→carousel→activities)** was off by ~+64px total. Fixed
+   the whole stack (verified each landmark vs the original): `.heading-131` padding `64px 24px`→
+   `32px 24px`; `.band-red` `30px`→`32px` (PRÓXIMAS bar 1221–1347, exact); `.carousel-track`
+   `735`→`779px`; `.coral-rule` margin-bottom `40`→`57px`; `.activities` padding-bottom `56`→
+   `17px`. Now 131-heading y1047, bar 1221–1347, activities coral-rule y2257, bottom red spacer
+   y2532 — all = original; total 2751 vs 2746 (+5px). Only the carousel *slide* shown differs
+   (auto-rotation timing).
+4. **Footer social icons** circles 28→32px (`.foot-soc` width/height `!important` + `margin:-2px`
+   to keep centre), glyph 15→20px — matches the original's larger circles.
+5. **historia — divider under "GALERIA DE PRESIDENTES"** was missing (the original has a grey
+   rule, like the banda maestro header). Added `top:4641,left:106,width:1154,height:1px,
+   rgb(94,94,94)` and bumped the collapsible `data-thr` 4619→4642 so the rule stays under the
+   header (doesn't shift down) when the gallery expands.
+
+After session 5: **all 14 pages match the original** (13 height-exact; homepage now +5px after
+the carousel-zone geometry fix above — every landmark aligned; only the carousel slide shown
+varies by timing). No remaining layout/content differences. ⚠️ All edits are in
+committed HTML/CSS and would be REGRESSED by `node build.mjs` (see Regeneration caveat) — note
+especially the nav `active`/caret markup and `.foot-soc`/`.caret`/`.heading-131` CSS.
+
+## FIXES APPLIED — 2026-06-21 (session 6) — exact pixel-diff sweep
+Installed `pixelmatch` + `pngjs` (`npm install --no-save`) and added `_scrape/pxdiff.mjs` — it
+produces an EXACT per-pixel diff map (`_scrape/px_<slug>_diff.png`, differing pixels in red) +
+per-band counts, so differences are localised to the pixel. Re-shot both sides, ran the diff on
+all 14 pages, examined via 5 parallel subagents, and re-verified every finding by hand. Found +
+fixed **5 real differences** (full report rewritten in **`PIXEL_DIFF.md`**):
+1. **[Alta] banda** — "Grande parte da história…" paragraph was split into 3 overlapping abs divs
+   (1st line wrapped and collided with the next) → merged into one flowing paragraph (top:1619).
+2. **[Média] orgaos-sociais** — all 25 portrait NAME labels (Oswald 24px) were 28px too high
+   (role labels already aligned) → `top += 28` on each. Now name text y1519–1537 = original.
+3. **[Média] orgaos-sociais** — role "Vice-Presidente Act. Desport" missing trailing period → added.
+4. **[Média] documentos** — the red "RELATÓRIOS E CONTAS" buttons were 57px tall vs 34px original
+   (top also 7px high) → 6 boxes `height:57→34` + `top+7`; 6 label texts `top−3`. Now h34 = orig.
+5. **[Baixa] contactos** — payment paragraph wrapped "respectivo" one word early (`width:1103`
+   too narrow) → `width:1103→1138`. Wrap now = original.
+
+Confirmed FALSE-POSITIVES (agents over-report): header logo/crest "heavier/wider" — measured
+identical (brand text 142–143px both; crest same bbox). Documented residual: nav spacing is
+slightly off on some pages (active pill ~14px wider; net ≤50px) — NOT fixed (shared header across
+14 pages, high risk, multi-factor, and already matches on several pages). ⚠️ All session-6 edits
+are committed HTML/CSS and would be REGRESSED by `node build.mjs` (esp. the orgaos name offsets and
+documentos button geometry) — see Regeneration caveat.
+
+## FIXES APPLIED — 2026-06-21 (session 7) — nav fix + exact-diff re-sweep
+Fixed the previously-documented nav residual, then re-ran the exact pixel-diff sweep (pixelmatch)
+and found + fixed 4 more. Full report in **`PIXEL_DIFF.md`**:
+1. **[Média] Nav spacing (all pages).** `.nav-item.active` padding `16→9px` (pill was too wide);
+   `.nav-item` margin `12→9px` (gaps); `.header-inner` padding `0 24px → 0 8px 0 24px` (shifts nav
+   right ~16px, keeps brand). Now nav span 600–1349 = original 599–1350. Header now differs only
+   by text anti-aliasing. (Brand logo/crest were already identical — false-positive.)
+2. **[Média] banda — missing full-width red band.** A solid `var(--red)` band (full width, 88px)
+   above "A BANDA NO TEMPO" was absent → added `<div left:0;top:2132;width:1366;height:88>`.
+3. **[Média] historia — inaugural quote wrapped early.** The quote uses `font-weight:300` but the
+   font link only loaded `@400;600;700`, so it rendered wider. Added weight 300 to the Open Sans
+   link on all 14 pages → quote now wraps identically (907px vs orig 915).
+4. **[Baixa] historia — GALERIA chevron** 32px too far left → `left:1190→1222` (= orig 1229–1242).
+5. **[Baixa] actividades — Descontos bullets** too small/light → `font-size 17.3→21px`,
+   `color rgb(67)→rgb(33)` (now matches the original's darker squares).
+⚠️ All session-7 edits are committed HTML/CSS and would be REGRESSED by `node build.mjs` (the nav
+markup/CSS, the banda red band, the font-link weight, the chevron/bullet tweaks). New tool from
+session 6 still present: `_scrape/pxdiff.mjs` (exact pixel diff via pixelmatch+pngjs).
+
+## FIXES APPLIED — 2026-06-21 (session 8) — banner overlay brightness
+Investigated the long-standing "banner framing" residual with exact pixel diff + live re-fetch.
+Finding: **banner FRAMING is correct** (source images byte-identical to live; box 1366×340 `cover`
+`50% 50%` same; historia building emblem aligns to the pixel — the "zoom" in earlier sessions was a
+thumbnail-scaling artifact). The real difference was the **dark overlay brightness**, which the
+original applies at a different strength per banner (the original has NO flat black overlay element —
+it darkens via a gradient). Fixes (inline on `.banner-overlay`):
+1. **historia** `.45→.57` — banner was ~21 luminance too light. Now 76.0 = orig 75.7; diff 1.95→1.78%.
+2. **orgaos-sociais** `.45→.37` — banner ~11 too dark. Now 82.6 = orig 82.5.
+- **hino / sala-de-cinema**: the original darkens these with a GRADIENT; a flat overlay matches the
+  mean but worsens the pixel-diff, so left at `.45` (best flat approximation) — residual is
+  photo-brightness (ignore category). New tools: `_scrape/dlbanner.mjs` (re-fetch live banner image),
+  `_scrape/bgprops.mjs` / `_scrape/overlayprobe.mjs` (read original banner CSS). ⚠️ The per-page
+  overlay opacities are inline on the `.banner-overlay` divs and would be REGRESSED by `build.mjs`.
+
+## FIXES APPLIED — 2026-06-22 (session 9) — final exact-diff sweep
+Ran the exact pixel-diff + 3 parallel subagents again. Found and fixed 1 real difference; confirmed
+2 false-positives by direct measurement. Full report in **`PIXEL_DIFF.md`**:
+1. **[Alta] historia — text overlap** at y≈2880. The paragraph "A Academia Almadense inseriu-se no
+   tecido associativo…" (top:2446, width:744) wrapped to 4 lines and its last line collided with the
+   next div (", recebendo… Romeu Correia." at top:2524). Merged into one flowing paragraph (top:2446).
+   Now matches the original; historia diff 1.78→1.77%.
+- **estatutos "1927"** — flagged as possibly wrong (covered by the cookie box in the original). Re-
+  captured the live page with the cookie box dismissed (`_scrape/estyear.mjs`): original shows
+  **"1927"** = our value. Correct (false-positive).
+- **hino / sala-de-cinema banner brightness** — tried flat AND radial-gradient overlays to match the
+  original's non-linear darkening; both worsen the pixel-diff. Flat `.45` is optimal; kept. Residual
+  is photo brightness/recompression (ignore category). Groups B & C (9 pages) found no differences.
+
+## FIXES APPLIED — 2026-06-22 (session 10) — cleared diff file + fresh full re-audit
+Cleared `PIXEL_DIFF.md` and re-ran the whole audit from scratch: re-shot both sides for all 14
+pages, exact pixelmatch diff per page, **4 parallel subagents** (groups A–D) stepping through every
+360px band with side-by-side crops, then manual zoom (3×) re-verification. Found + fixed **1 real
+difference**; the other 13 pages had no content/layout differences.
+1. **[Média] Nav active-pill + dropdown caret (shared header, all 14 pages).** On a dropdown
+   parent's OWN page (a-academia, salas-de-espetaculo) the dark active "pill" wrapped the `⌄` caret
+   too (white caret inside the box); the original keeps the pill around the **text only** with the
+   caret **outside** (dark, on white). The caret was also too tight to the label / slightly small.
+   Fix: moved `<span class="caret">` OUT of the `<a class="nav-item">` (now a sibling inside
+   `.nav-cell`) in all 14 HTML files, and added `.nav-cell{gap:2px}` (the anchor's `margin:0 9px`
+   supplies the rest of the gap). Verified vs. live on active (a-academia), non-active (home) and a
+   different active page (contactos) — pill and caret now match.
+- **Recurring red band y720–1080 on almost every page** = the live site's transient Google
+  cookie-consent overlay (absent from our static replica — correct), NOT a defect. Documented in
+  `PIXEL_DIFF.md`.
+- New audit tools: `_scrape/sbs.py` (labeled side-by-side band crop) and `_scrape/navzoom.py`
+  (3× header/nav zoom).
+⚠️ The caret-outside-anchor markup and `.nav-cell{gap}` would be REGRESSED by `node build.mjs` —
+the generator currently emits the caret INSIDE the anchor (see Regeneration caveat).
+
+## FIXES APPLIED — 2026-06-22 (session 11) — cookie-box alignment + homepage hero/rule
+Cleared `PIXEL_DIFF.md` again and re-ran the full audit (re-shot both sides, pixelmatch per page,
+4 parallel subagents over every band, manual pixel measurement). Found + fixed **3 real
+differences**; the 13 subpages otherwise had none.
+1. **[Alta] Cookie box mis-positioned (all 14 pages).** The static reproduction of Google's
+   cookie-consent notice (`.cookie-box`) was `position:absolute; bottom:150px` → rendered at
+   **y≈760**, on top of real content (e.g. the first digitised estatuto), while the original is a
+   **viewport-fixed** overlay at the window bottom (≈y845–985). This was the dominant non-photo diff
+   (the recurring red y720–1080 band on almost every page). Fix in `styles.css`:
+   `.cookie-box{position:fixed; left:24px; bottom:23px}`. Verified: the "GOT IT" line now sits at
+   y947–956 (ours) vs y946–956 (orig) — pixel-aligned. Page diffs dropped notably (documentos
+   3.93→2.11%, sala-de-cinema 3.64→2.49%, historia 1.77→1.32%, biblioteca 4.80→3.61%, etc.).
+   Residual in that band is now just the box TEXT (Roboto vs fallback font rendering) — ignore.
+2. **[Média] Homepage hero block ~32px too high.** The hero group (title "ACADEMIA ALMADENSE" +
+   coral underline + social icons) sat 32px above the original (coral underline y530–541 vs
+   562–573). Fix: `.hero-content{top:32px}` (shifts the centered group down inside the 100vh hero;
+   no height change). Now underline y562–573 = original.
+3. **[Média] Homepage divider rule (above "ATIVIDADES 2025/26").** Wrong colour — dark red
+   `rgb(211,65,63)` instead of the lighter coral `rgb(255,117,117)` — and too narrow (1090px,
+   constrained by the 24px padding) vs the original's 1154px. Fix:
+   `.coral-rule{background:rgb(255,117,117); margin:0 -32px 57px}`. Now 1154px @ rgb(255,117,117).
+⚠️ All session-11 edits are in `styles.css` (safe from `build.mjs` — it does not regenerate
+`styles.css` nor the hand-built `index.html`). The `.cookie-box{position:fixed}` rule is shared by
+all 14 pages via `styles.css`.
+
+## FIXES APPLIED — 2026-06-22 (session 12) — hero social-icon circles
+Cleared `PIXEL_DIFF.md` and re-ran a forensic audit (re-shot both sides, pixelmatch, 3 parallel
+subagents focused on the highest-residual image-heavy pages, hunting for content/structure diffs
+masked by recompression). Found + fixed **1 real difference**:
+1. **[Média] Homepage hero social icons had no circular background.** The 3 FB/IG/YT glyphs under
+   the coral underline were bare white glyphs; the original wraps each in a dark semi-transparent
+   circle (sampled ~#5f6368). Fix: `.soc-circle{background:rgba(0,0,0,.35)}` (`styles.css`). The
+   vertical position was already correct — an agent's "icons 85px too low" was a misread caused by
+   the missing circle making the icons look displaced; manual zoom (`_ico_local2` vs `_ico_orig`)
+   confirmed position matches and only the circle bg was missing.
+- Forensic re-check of banda timeline, actividades tables, salas/cine/sala-de-cinema seating plans,
+  documentos buttons → all confirmed correct (residual = photo recompression only).
+⚠️ Session-12 edit is in `styles.css` (safe from `build.mjs`).
+
+## FIXES APPLIED — 2026-06-22 (session 13) — cookie-box styling + social-icon glyph sizes
+Convergence sweep. Found + fixed **4 groups** of real differences (all shared CSS / homepage),
+verified by direct pixel measurement:
+1. **[Média] Cookie box wrong size (all 14 pages).** Width 311px vs original **439px**; font 12px too
+   small (text wrapped more words/line); height 162 vs **188px**. Fix: `.cookie-box{width:439px;
+   font-size:16px}`. Now 438×188px with identical 4-line wrapping. Dropped diff on most pages
+   (documentos 2.11→1.15%, sala-de-cinema 2.49→1.75%, biblioteca 3.61→2.69%).
+2. **[Baixa] Cookie "LEARN MORE" was blue (all 14).** Original is grey (only "GOT IT" is blue). Fix:
+   `.cookie-learn{color:#5f6368}`.
+3. **[Média] Hero social-icon glyphs too small (home).** Glyph height 12px vs 15px. Fix:
+   `.soc-circle img{20→24px}`.
+4. **[Média] Footer social-icon glyphs too small (all 14).** Homepage `.foot-circle img{18→22px}`;
+   sub-pages `.foot-soc img{20→22px}`. Now the glyphs fill the grey circles like the original.
+- **Dismissed (false-positive):** an agent claimed the hero coral underline sat 20px too high / the
+  icon gap was 41px too big — direct measurement showed the underline at y562–573 (ours) = y562–573
+  (orig), aligned. The "displacement" was the missing icon-circle bg from before (now fixed).
+⚠️ All session-13 edits are in `styles.css` (safe from `build.mjs`); the cookie-box and `.foot-soc`
+rules are shared by all 14 pages.
+
+## FIXES APPLIED — 2026-06-22 (session 14) — header font weights + ATIVIDADES alignment
+Convergence sweep (2 agents: home + sub-pages). Found + fixed **6 real differences**, all verified by
+dark-pixel-count / bbox measurement (font-weight had a history of false-positives, so each was measured):
+1. **[Média] Nav text too bold (all 14).** `.nav-item{font-weight:600→400}`. Dark-pixel count
+   2185→1669 = orig 1671.
+2. **[Média] Logo too light (all 14).** `.brand-title{font-weight:300→400}` (session-3 had overshot
+   600→300). 603→806 vs orig 748 — 400 is the closest renderable weight (Oswald renders only 300/400
+   here; intermediate 350 snapped to 300).
+3. **[Baixa] Active nav pill 4px too tall (all 14).** `.nav-item.active{padding:6px 9px→4px 9px}`.
+   Pill now h30 = orig.
+4. **[Baixa] Nav 25px too narrow after the weight change.** `.nav-item{margin:0 9px→0 11px}` (the
+   lighter weight narrowed the text, undoing session-7's spacing tune). Nav now x602-1349 = orig 599-1349.
+5. **[Média] Homepage ATIVIDADES body text ~25px right.** `.activities{padding:0 24px→0}` (original
+   has no side indent) + `.coral-rule{margin:0 -32px→0 -8px}` to keep the rule at 1154px. Body now
+   x117 = orig x116.
+6. Coral rule re-confirmed 1154px @ rgb(255,117,117) after the padding change.
+- **Dismissed (false-positive):** "coral underline 20px too high / icon gap too big" — measured aligned.
+⚠️ Session-14 edits are in `styles.css`. NOTE the interplay: nav weight (#1) and nav spacing (#4) are
+coupled — if you re-tune one, re-measure the other. Logo is 400 (best available).
+
+## FIXES APPLIED — 2026-06-22 (session 15) — italic font axis + orgaos heading
+Convergence sweep (home + sub-pages). **Home converged** (only sub-pixel line-height drift). Sub-pages:
+fixed **3 real differences**:
+1. **[Média] Italic axis never loaded (all 14 pages).** The Google Fonts URL requested
+   `Open+Sans:wght@300;400;600;700` with NO `ital` axis, so every `font-style:italic` (historia
+   inaugural quote, biblioteca Valter-Hugo-Mãe quote, hino lyrics) rendered as a synthetic oblique
+   (lighter/wider) instead of true italic. Fix: URL →
+   `Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400` in all 14 HTML files. (Session-7 thought
+   it had fixed the historia wrap by adding weight 300 to the URL — but the real issue was the missing
+   ital axis.)
+2. **[Média] historia inaugural quote was weight 300; original is 400 italic.** `font-weight:300→400`
+   on the quote. Dark-pixel count 6802→11912 = orig 11893 (~0.2%); wrapping now identical.
+3. **[Baixa] orgaos-sociais "MESA DA ASSEMBLEIA-GERAL" heading 7px high.** `top:168px→175px`. Now
+   y550 = orig (intro/rule above and portraits below were already aligned — only this heading's top
+   was off). orgaos diff 0.64→0.60%.
+⚠️ Session-15: the ital-axis URL is in all 14 HTML `<link>` tags; the quote weight is inline in
+`historia.html`; the MESA top is inline in `orgaos-sociais.html`. All would be regressed by `build.mjs`.
+
+## CONVERGENCE REACHED — 2026-06-22 (session 16)
+After the session 10–15 fixes, a full final sweep (homepage + all 13 sub-pages, 3 parallel subagents
+with quantitative pixel measurement) found **no remaining real differences**. Every page is content/
+layout-faithful; all residual pixel-diff is the ignore-category set (JPEG photo recompression, banner
+gradient brightness, homepage carousel slide timing, embedded Google map, cookie-box fallback font,
+sub-pixel line-height drift). See `PIXEL_DIFF.md` for the converged report and the full fix list.
+The iterative audit loop is therefore complete (no more differences to fix).
+
 ## KNOWN ISSUES / REMAINING WORK
 1. ~~**Hino verses not filled in.**~~ DONE — see session-2 fix 4.
 2. ~~**Textured banner backgrounds — framing slightly off.**~~ DONE — see session-3
