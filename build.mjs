@@ -24,6 +24,14 @@ const SOCIAL = {
   instagram:'https://instagram.com/academia.almadense/',
   youtube:'https://youtube.com/user/AcademiaAlmadense',
 };
+// Letra do Hino (versão do 117.º aniversário, 27 de Março de 2012), transcrita
+// verbatim do site original. Uma entrada por estrofe; cada linha é um verso.
+const HINO_ESTROFES = [
+  ['Foi em noventa e cinco','A vinte e sete, ditoso dia','Que em Março, com afinco','Se fundou em Almada a nossa Academia'],
+  ['Foi de muita coragem','O gesto dos nossos percursores,','Cantemos em homenagem','E respeito pelos nossos fundadores'],
+  ['Salve! Viva a nossa Academia','De Instrução e Recreio Almadense','Entoemos pois com alegria','Este hino que só a nos pertence'],
+  ['Académicos, com honra e glória','Defendei sempre a nossa Bandeira','Trabalhemos honrando a memória','De José Maria de Oliveira.'],
+];
 const TITLES = { 'a-academia':'A Academia','historia':'História','estatutos':'Estatutos',
   'orgaos-sociais':'Orgãos Sociais','hino':'Hino','biblioteca':'Biblioteca','documentos':'Documentos',
   'actividades':'Actividades','banda':'Banda','salas-de-espetaculo':'Salas de Espetáculo',
@@ -288,14 +296,12 @@ function buildPage(slug){
   }
 
   if(HINO_LYRICS){
-    // Layout is ready for the anthem verses — paste them into the container below
-    // (one <p> per stanza). Centred, 18px, matching the original's lyric block.
+    // Anthem verses — one <p> per stanza, italic and centred like the original.
     const top = 2676 - ANCHOR;
-    parts.push(`<div class="abs txt" id="hino-letra" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;line-height:1.7;color:#2e3d4c;z-index:2">
-<!-- ===== LETRA DO HINO: cole aqui as estrofes (um <p> por estrofe) ===== -->
-<p style="font-style:italic;color:#9aa0a6">[Letra do hino — cole as estrofes aqui]</p>
-<!-- ===== fim da letra ===== -->
-</div>`);
+    const letra = HINO_ESTROFES
+      .map(st=>`<p style="margin:0 0 14px;font-style:italic">${st.map(esc).join('<br>')}</p>`)
+      .join('');
+    parts.push(`<div class="abs txt" id="hino-letra" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;line-height:1.6;color:#2e3d4c;z-index:2">${letra}</div>`);
   }
 
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
