@@ -150,6 +150,94 @@ function bannerHtml(slug, anchor){
   return `<section class="page-banner" style="height:${H}px">${bg}${rule}${title}</section>`;
 }
 
+// ===== MOBILE dual-render =====
+// The desktop canvas is reconstructed from desktop geometry (_scrape/layout). The original
+// reflows to a different layout on mobile, so we reconstruct that separately from mobile geometry
+// captured at 390px (_scrape/mlayout). Each element is placed at its exact original mobile
+// coordinate — same fidelity approach as desktop — instead of CSS-reflowing the desktop canvas.
+const MLAY = path.join(ROOT, '_scrape', 'mlayout');
+const hasMlay = (slug) => fs.existsSync(path.join(MLAY, `${slug}.json`));
+function mtext(e){
+  let t = esc(e.text);
+  if(e.href) t = `<a href="${e.href}" target="_blank" rel="noopener" style="color:inherit;text-decoration:inherit">${t}</a>`;
+  return t;
+}
+function buildMobile(slug){
+  const m = JSON.parse(fs.readFileSync(path.join(MLAY, `${slug}.json`),'utf8'));
+  const dimgs = JSON.parse(fs.readFileSync(path.join(LAY, `${slug}.json`),'utf8')).els.filter(e=>e.t==='img').map(e=>e.file);
+  const info = BANNERINFO[slug] || {};
+  const bgs = (m.bgs||[]).slice().sort((a,b)=>a.y-b.y);
+  const bannerBg = bgs.find(b=>b.y<12 && b.w>=300 && b.h>=120);
+  const bannerH = Math.round(bannerBg ? bannerBg.h : 314);
+  const otherBgs = bgs.filter(b=>b!==bannerBg);
+  const parts = [];
+  // banner: local cover image with the original's exact mobile crop (size/position) + dark overlay
+  const bgFile = info.bgFile;
+  const bsize = (bannerBg && bannerBg.bsize) || 'cover';
+  const bpos = (bannerBg && bannerBg.bpos) || info.bgPos || '50% 50%';
+  parts.push(`<div class="m-banner" style="left:0;top:0;width:390px;height:${bannerH}px;${bgFile?`background-image:url('${bgFile}');background-size:${bsize};background-position:${bpos};`:''}"><span class="m-ov"></span></div>`);
+  // decade/timeline band background strips (banda) -> local timeline images by order
+  const tlYears = ((TIMELINE[slug]||{}).years||[]).map(y=>y.y);
+  let ti=0;
+  for(const b of otherBgs){
+    const yr = tlYears[ti++];
+    if(yr) parts.push(`<img class="m-band" src="assets/timeline/sm_${yr}.png" alt="${yr}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">`);
+    else parts.push(`<div class="m-band" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;background:url('${b.url}') center/cover"></div>`);
+  }
+  // content elements at their exact mobile coordinates
+  let imgIdx = 0; let titleEl = null;
+  for(const e of m.els.slice().sort((a,b)=>a.y-b.y)){
+    if(e.t==='img'){
+      if(e.y < bannerH && e.w < 80 && e.h < 80) continue;        // header crest — our header draws its own
+      const soc = /facebook|instagram|youtube/i.exec(e.src||'');
+      if(soc || (e.w<=34 && e.h<=34)){
+        if(soc){ const n=soc[0].toLowerCase(); parts.push(`<a class="m-soc" href="${SOCIAL[n]||'#'}" target="_blank" rel="noopener" aria-label="${n}" style="left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px"><img src="assets/${n}.png" alt="${n}"></a>`); }
+        continue;
+      }
+      const file = dimgs[imgIdx++] || e.src;
+      parts.push(`<img class="m-img" src="${file}" alt="${esc(e.alt||'')}" style="left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px">`);
+    } else if(e.t==='iframe'){
+      const src = (e.src||'').startsWith('http') ? e.src : '';
+      if(src) parts.push(`<iframe class="m-if" src="${esc(src)}" loading="lazy" frameborder="0" allowfullscreen style="left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px;border:0"></iframe>`);
+    } else if(e.t==='text'){
+      const t = (e.text||'').trim();
+      if(!t) continue;
+      if(/^(Skip to main content|Skip to navigation|Cookie Policy|Reject|Accept)$/i.test(t)) continue;
+      if(/uses cookies from Google/i.test(t)) continue;
+      const isTitle = e.y < bannerH && parseFloat(e.fs) >= 28;
+      if(isTitle && !titleEl) titleEl = e;
+      const ff = (e.ff||"'Open Sans'").replace(/"/g,"'");
+      // White text below the banner is never plain body copy — it sits on a coloured surface that
+      // Google Sites paints as a section background (not captured). Wide => full-width red band
+      // heading (e.g. actividades); narrow => red rounded button (e.g. documentos report buttons).
+      const cm = (e.col||'').match(/(\d+),\s*(\d+),\s*(\d+)/);
+      const white = cm && +cm[1]>235 && +cm[2]>235 && +cm[3]>235;
+      if(white && !isTitle){
+        if(e.w >= 600){
+          parts.push(`<div class="m-bandhead" style="left:0;top:${Math.round(e.y-18)}px;width:390px;height:${Math.round(e.h+36)}px;font-family:${ff};font-size:${e.fs};text-transform:${e.tt}">${mtext(e)}</div>`);
+        } else {
+          parts.push(`<div class="m-btn" style="left:${Math.round(e.x)}px;top:${Math.round(e.y-9)}px;width:${Math.round(e.w)}px;height:${Math.round(e.h+18)}px;font-family:${ff};font-size:${e.fs};text-transform:${e.tt}">${mtext(e)}</div>`);
+        }
+        continue;
+      }
+      // URL links render in Google's link blue + underline (the scrape mis-captures their colour)
+      const isUrl = e.href && /^https?:\/\//.test((e.text||'').trim());
+      const col = isUrl ? 'rgb(17,85,204)' : e.col;
+      const td = isUrl ? 'underline' : (e.td||'none');
+      const sty = `left:${e.x}px;top:${e.y}px;width:${Math.ceil(e.w)+1}px;font-family:${ff};font-size:${e.fs};font-weight:${e.fw};font-style:${e.fsi};color:${col};line-height:${e.lh};letter-spacing:${e.ls};text-transform:${e.tt};text-align:${e.ta};text-decoration:${td}`;
+      parts.push(`<div class="m-txt${isTitle?' m-title':''}" style="${sty}">${mtext(e)}</div>`);
+    }
+  }
+  // red underline beneath the banner title (original keeps one)
+  const ul = (UNDERLINES[slug]||{}).underline;
+  if(titleEl){
+    const uw = Math.min(250, Math.round(titleEl.w*0.9));
+    const uy = Math.round(titleEl.y + titleEl.h + 10);
+    parts.push(`<div class="m-rule" style="left:${Math.round(titleEl.x)}px;top:${uy}px;width:${uw}px;height:5px"></div>`);
+  }
+  return `<div class="m-canvas" style="height:${m.pageH}px">\n${parts.join('\n')}\n</div>`;
+}
+
 function header(active){
   const items = NAV.map(n=>{
     const cls = 'nav-item'+(n.key===active?' active':'')+(n.sub?' has-sub':'');
@@ -165,14 +253,17 @@ function header(active){
   <button class="nav-search" aria-label="Pesquisar"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.49 4.49 0 019.5 14z"/></svg></button>
 </div></header>`;
 }
-const COOKIE = `<div class="cookie-box" id="cookieBox"><p>This site uses cookies from Google to deliver its services and to analyze traffic. Information about your use of this site is shared with Google. By using this site, you agree to its use of cookies.</p><div class="cookie-actions"><a href="#" class="cookie-learn">LEARN MORE</a><button class="cookie-ok" onclick="document.getElementById('cookieBox').style.display='none'">GOT IT</button></div></div>`;
+const COOKIE = `<div class="cookie-box" id="cookieBox"><p>This site uses cookies from Google to deliver its services and to analyze traffic. Information about your use of this site is shared with Google. By using this site, you agree to its use of cookies. <a href="#" class="cookie-learn">Cookie Policy</a></p><div class="cookie-actions"><button class="cookie-ok" onclick="document.getElementById('cookieBox').style.display='none'">REJECT</button><button class="cookie-ok" onclick="document.getElementById('cookieBox').style.display='none'">ACCEPT</button></div></div>`;
 
 function styleStr(e){
   const s = [];
   // font-family comes back like `"Open Sans", sans-serif` — the double quotes
   // would prematurely close the HTML style="" attribute, so normalise to single quotes.
   if(e.ff) s.push(`font-family:${e.ff.replace(/"/g,"'")}`);
-  if(e.fs) s.push(`font-size:${e.fs}`);
+  // emit the original size as a custom property so the mobile stylesheet can scale every
+  // text element up uniformly (Google Sites enlarges body copy on mobile) without touching
+  // the pixel-exact desktop layout, where font-size simply resolves to var(--fs).
+  if(e.fs) s.push(`--fs:${e.fs};font-size:var(--fs)`);
   if(e.fw) s.push(`font-weight:${e.fw}`);
   if(e.fsi && e.fsi!=='normal') s.push(`font-style:${e.fsi}`);
   if(e.col) s.push(`color:${e.col}`);
@@ -249,6 +340,22 @@ function buildPage(slug){
     }
   }
 
+  // Some paragraphs were scraped as two overlapping nodes at the same (x,y): a narrow 1-line
+  // head + the wider remaining lines. Rendered at the same top they overlap into garbled text
+  // (e.g. cine-teatro, historia). Merge the head into the wide block so the paragraph flows.
+  for(let i=0;i<texts.length;i++){
+    for(let j=0;j<texts.length;j++){
+      if(i===j || drop.has(texts[i]) || drop.has(texts[j])) continue;
+      const a=texts[i], b=texts[j];
+      if(Math.abs(a.x-b.x)<6 && Math.abs(a.y-b.y)<6 && a.text.trim()!==b.text.trim()
+         && a.h<32 && a.w<b.w && b.h>=a.h*1.5){
+        b.text = a.text.trim() + ' ' + b.text;     // a is the head line, prepend it to b
+        if(a.links && a.links.length) b.links = [...a.links, ...(b.links||[])];
+        drop.add(a);
+      }
+    }
+  }
+
   // Hino: the anthem verses are song lyrics — replicate the page but not the lyrics.
   const HINO_LYRICS = slug==='hino' ? [2660, 3185] : null;
 
@@ -259,7 +366,10 @@ function buildPage(slug){
     if(e.t==='img'){
       let img = `<img src="${e.file}" alt="" style="width:${e.w}px;height:${e.h}px">`;
       if(e.href) img = `<a href="${e.href}" target="_blank" rel="noopener">${img}</a>`;
-      parts.push(`<div class="abs" style="left:${e.x}px;top:${top}px;width:${e.w}px;height:${e.h}px;z-index:1">${img}</div>`);
+      // wide content images (member photos, room/seating photos) become full-width on mobile to
+      // match the original; small inline thumbnails keep their size.
+      const wide = e.w >= 240 ? ' img-wide' : '';
+      parts.push(`<div class="abs${wide}" style="left:${e.x}px;top:${top}px;width:${e.w}px;height:${e.h}px;z-index:1">${img}</div>`);
     } else if(e.t==='social'){
       const url = SOCIAL[e.name]||'#';
       parts.push(`<a class="abs foot-soc" href="${url}" target="_blank" rel="noopener" style="left:${e.x}px;top:${top}px;width:${e.w}px;height:${e.h}px;z-index:2" aria-label="${e.name}"><img src="assets/${e.name}.png" alt="${e.name}"></a>`);
@@ -274,6 +384,16 @@ function buildPage(slug){
         const rad = e.box.radius && e.box.radius!=='0px' ? `;border-radius:${e.box.radius}` : '';
         parts.push(`<div class="abs deco" style="left:${e.box.x}px;top:${bt}px;width:${e.box.w}px;height:${e.box.h}px;background:${e.box.bg}${rad};z-index:1"></div>`);
       }
+      // Full-width red SECTION BAND: white heading text on its own red strip (e.g. actividades
+      // "MODALIDADES DESPORTIVAS"/"ACTIVIDADES CULTURAIS"). Google Sites paints the strip as a
+      // section background, not a captured rect, so synthesise it: full width, 32px padding
+      // (measured). The deco strip renders the band on desktop (hidden on mobile); the .band-head
+      // class lets the mobile stylesheet give the text its own red background.
+      const cm = (e.col||'').match(/(\d+),\s*(\d+),\s*(\d+)/);
+      const isBandHead = !e.box && e.w >= 600 && cm && +cm[1] > 235 && +cm[2] > 235 && +cm[3] > 235;
+      if(isBandHead){
+        parts.push(`<div class="abs deco" style="left:0;top:${(e.y-32)-ANCHOR}px;width:${d.pageWidth||1366}px;height:${e.h+64}px;background:var(--red);z-index:0"></div>`);
+      }
       const lh = parseFloat(e.lh) || (parseFloat(e.fs)*1.2) || 24;
       const oneLine = e.h <= lh*1.6;                 // single-line text must not wrap
       const ws = oneLine ? ';white-space:nowrap' : '';
@@ -284,7 +404,8 @@ function buildPage(slug){
           `<div class="abs collap-chevron" data-for="${col.id}" style="left:1190px;top:${top}px;z-index:4">&#9662;</div>`);
       } else {
         const band = e.box ? `;--band:${e.box.bg}` : '';
-        parts.push(`<div class="abs txt${e.box?' on-band':''}" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)}${band};z-index:2">${textHtml(e)}</div>`);
+        const cls = 'abs txt' + (e.box?' on-band':'') + (isBandHead?' band-head':'');
+        parts.push(`<div class="${cls}" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)}${band};z-index:2">${textHtml(e)}</div>`);
       }
     }
   }
@@ -307,11 +428,52 @@ function buildPage(slug){
     parts.push(`<div class="abs txt" id="hino-letra" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;line-height:1.6;color:#2e3d4c;z-index:2">${letra}</div>`);
   }
 
-  // Sort into visual reading order (top, then left). DOM order is irrelevant to the
-  // absolutely-positioned desktop view (stacking is governed by z-index), but on mobile
-  // the canvas reflows to a single static column in this order.
-  const numAfter = (s, key) => { const m = s.match(new RegExp(key + ':(-?\\d+(?:\\.\\d+)?)px')); return m ? parseFloat(m[1]) : 0; };
-  parts.sort((a, b) => { const t = numAfter(a, 'top') - numAfter(b, 'top'); return Math.abs(t) > 4 ? t : numAfter(a, 'left') - numAfter(b, 'left'); });
+  // Sort into visual reading order. DOM order is irrelevant to the absolutely-positioned
+  // desktop view (stacking is governed by z-index), but on mobile the canvas reflows to a
+  // single static column in DOM order. A naive (top,left) sort breaks multi-column CARD
+  // grids (e.g. órgãos sociais: photo row / name row / role row) into all-photos -> all-names
+  // -> all-roles. So cluster narrow elements into per-column cards first, then order whole
+  // cards by (top,left), keeping each card's photo/name/role together.
+  const order = parts.map((html, i) => {
+    const n = (k) => { const m = html.match(new RegExp('(?:^|[;\\s"])' + k + ':(-?\\d+(?:\\.\\d+)?)px')); return m ? parseFloat(m[1]) : null; };
+    const left = n('left') ?? 0, top = n('top') ?? 0;
+    let width = n('width'); if (width == null) width = n('min-width'); if (width == null) width = 0;
+    const height = n('height') ?? 0;
+    const deco = /class="[^"]*\bdeco\b/.test(html) || /\bcollap-content\b/.test(html);
+    return { html, left, top, width, height, deco, i };
+  });
+  const WIDE = 620;                              // px: full-width flow anchors (headings, paragraphs, bands)
+  const narrow = order.filter(o => !o.deco && o.width > 0 && o.width < WIDE);
+  // cluster column centres (1-D gap clustering). Define columns only from reliable wide
+  // anchors (photos/names, width>=180); short role-text fragments are noisy and would chain
+  // adjacent columns together, so they don't define columns — they're assigned to the nearest.
+  const anchors = narrow.filter(o => o.width >= 180);
+  const centres = (anchors.length >= 2 ? anchors : narrow).map(o => o.left + o.width / 2).sort((a, b) => a - b);
+  const clusters = centres.length ? [[centres[0]]] : [];
+  for (let k = 1; k < centres.length; k++) { if (centres[k] - centres[k - 1] > 120) clusters.push([]); clusters[clusters.length - 1].push(centres[k]); }
+  const colC = clusters.map(cl => cl.reduce((a, b) => a + b, 0) / cl.length);
+  const colOf = (o) => { const c = o.left + o.width / 2; let best = 0, bd = 1e9; colC.forEach((cc, k) => { const d = Math.abs(cc - c); if (d < bd) { bd = d; best = k; } }); return best; };
+  // A card grid is a set of photo tiles (square-ish, width&height>=180) in >=2 columns.
+  // Detect row bands from the photo tops, then group every narrow element into its (row,col)
+  // CARD and emit the grid row-major (photo, name, role together), instead of all-photos first.
+  const photos = narrow.filter(o => o.width >= 180 && o.height >= 180);
+  const isGrid = colC.length >= 2 && photos.length >= 2;
+  const units = [];                              // {top,left,items:[...]} sorted/expanded later
+  if (isGrid) {
+    const ptops = photos.map(o => o.top).sort((a, b) => a - b);
+    const rowTops = [ptops[0]];
+    for (let k = 1; k < ptops.length; k++) if (ptops[k] - rowTops[rowTops.length - 1] > 150) rowTops.push(ptops[k]);
+    const rowOf = (o) => { let r = 0; for (let k = 0; k < rowTops.length; k++) { if (rowTops[k] <= o.top + 30) r = k; else break; } return r; };
+    const cards = {};
+    for (const o of narrow) { const r = rowOf(o), c = colOf(o), key = r + '|' + c; (cards[key] ||= { top: rowTops[r], left: colC[c], items: [] }).items.push(o); }
+    for (const key in cards) units.push(cards[key]);
+    for (const o of order) if (o.deco || o.width === 0 || o.width >= WIDE) units.push({ top: o.top, left: o.left, items: [o] });
+  } else {
+    for (const o of order) units.push({ top: o.top, left: o.left, items: [o] });
+  }
+  units.sort((a, b) => { const t = a.top - b.top; return Math.abs(t) > 6 ? t : a.left - b.left; });
+  parts.length = 0;
+  for (const u of units) { u.items.sort((a, b) => { const t = a.top - b.top; return Math.abs(t) > 6 ? t : a.left - b.left; }); for (const it of u.items) parts.push(it.html); }
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
   const banner = bannerHtml(slug, ANCHOR);
   const title = `${TITLES[slug]||''} | Academia Almadense (AIRFA)`;
@@ -332,10 +494,13 @@ ${seoHead(slug, title, desc)}
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="subpage">
+<body class="subpage page-${slug}">
 ${header(d.active||slugActive(slug))}
+<div class="desktop-view">
 ${banner}
 ${canvas}
+</div>
+${hasMlay(slug) ? `<div class="mobile-view">\n${buildMobile(slug)}\n</div>` : ''}
 ${COOKIE}
 ${NAV_JS}
 ${(cols.length || tl) ? COLLAP_JS : ''}

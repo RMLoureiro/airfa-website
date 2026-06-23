@@ -251,7 +251,7 @@ a{color:inherit;text-decoration:none;}
   display:flex;align-items:center;justify-content:flex-end;gap:18px;
   text-transform:uppercase;
 }
-.cookie-learn{color:#5f6368;font-weight:500;font-size:12px;}
+.cookie-learn{color:#1a73e8;font-weight:500;text-decoration:underline;}
 .cookie-ok{
   background:none;border:none;cursor:pointer;
   color:#1a73e8;font-weight:500;font-size:12px;
@@ -405,21 +405,21 @@ a{color:inherit;text-decoration:none;}
   .nav-search{margin-left:0;}
 
   /* ---- hero ---- */
-  .hero{height:auto;min-height:0;aspect-ratio:390/300;margin-top:-56px;}
-  .hero-content{top:18px;}
-  .hero-title{font-size:34px;line-height:1.15;}
+  .hero{height:auto;min-height:0;aspect-ratio:390/430;margin-top:-56px;}
+  .hero-content{top:0;}
+  .hero-title{font-size:44px;line-height:1.1;max-width:6em;}
   .hero-title span{padding:0 10px;}
-  .hero-title::before{width:78vw;height:6px;top:calc(100% + 8px);}
-  .hero-social{margin-top:24px;gap:12px;}
+  .hero-title::before{width:64vw;height:6px;top:calc(100% + 12px);}
+  .hero-social{margin-top:34px;gap:12px;}
 
   /* ---- section headings ---- */
-  .heading-131{font-size:25px;padding:26px 18px;line-height:1.28;}
-  .band-red{padding:22px 18px;}
-  .heading-proximas{font-size:23px;}
+  .heading-131{font-size:40px;padding:40px 22px;line-height:1.22;}
+  .band-red{padding:28px 22px;}
+  .heading-proximas{font-size:30px;}
   .heading-atividades{font-size:25px;margin:0 0 20px;}
   .act-text{font-size:17px;}
-  .carousel-section{padding:26px 16px;}
-  .carousel-track{width:100%;max-width:340px;height:auto;aspect-ratio:520/779;}
+  .carousel-section{padding:40px 16px;}
+  .carousel-track{width:100%;max-width:360px;height:auto;aspect-ratio:520/779;}
   .coral-rule{margin:0 0 34px;}
 
   /* ---- footer / cookie ---- */
@@ -430,11 +430,20 @@ a{color:inherit;text-decoration:none;}
   .page-banner{height:200px!important;}
   .banner-bg{height:100%!important;}
   .banner-title{
-    top:50%!important;transform:translateY(-50%);
-    white-space:normal!important;font-size:34px!important;
-    line-height:1.1!important;padding:0 16px;letter-spacing:0!important;
+    top:44%!important;transform:translateY(-50%);
+    white-space:normal!important;font-size:40px!important;
+    line-height:1.08!important;padding:0 16px;letter-spacing:0!important;
   }
-  .banner-rule{display:none!important;}
+  /* red title underline, re-centred for the mobile banner (original keeps it) */
+  .banner-rule{
+    display:block!important;top:auto!important;bottom:26px!important;left:50%!important;
+    transform:translateX(-50%)!important;
+    width:62%!important;max-width:250px!important;height:6px!important;background:var(--coral)!important;
+  }
+  /* documentos has a tall cover banner (crest on curtain) — keep it tall on mobile too */
+  .page-documentos .page-banner{height:300px!important;}
+  .page-documentos .banner-title{top:58%!important;}
+  .page-documentos .banner-rule{bottom:auto!important;top:70%!important;}
 
   /* ---- content canvas: reflow absolute layout into a single column ---- */
   .page-canvas{
@@ -448,20 +457,77 @@ a{color:inherit;text-decoration:none;}
     min-width:0!important;white-space:normal!important;
     margin:0 0 14px!important;z-index:auto!important;
   }
-  .page-canvas .txt{text-align:left!important;}
+  .page-canvas .txt{
+    text-align:left!important;
+    font-size:calc(var(--fs,16px)*1.13)!important;line-height:1.5!important;
+  }
+  /* on-band buttons keep tighter leading so they stay pill-shaped */
+  .page-canvas .on-band{line-height:1.25!important;}
+  /* full-bleed red section band (white heading text gets its own red strip on mobile) */
+  .page-canvas .band-head{
+    display:block!important;background:var(--red)!important;color:#fff!important;
+    text-align:center!important;line-height:1.18!important;
+    margin:6px -16px 18px!important;padding:18px 16px!important;
+    width:calc(100% + 32px)!important;max-width:none!important;box-sizing:border-box;
+  }
   .page-canvas .on-band{
     display:block!important;width:fit-content!important;max-width:100%!important;
     background:var(--band,#d3413f)!important;color:#fff!important;
-    padding:11px 20px!important;border-radius:3px!important;
-    font-weight:600;text-align:center!important;margin:0 auto 14px!important;
+    padding:12px 22px!important;border-radius:3px!important;
+    font-weight:600;text-align:center!important;margin:0 auto 22px!important;
   }
   .page-canvas .on-band a{color:#fff!important;}
   .page-canvas .foot-soc{display:inline-flex!important;vertical-align:middle;}
-  .page-canvas img{width:auto!important;max-width:100%!important;height:auto!important;margin:0 auto 14px!important;}
+  /* keep each image's captured aspect (inline width capped to viewport); wide content images
+     (member photos, room/seating photos) go full-width like the original */
+  .page-canvas img{max-width:100%!important;height:auto!important;margin:0 auto 18px!important;}
+  .page-canvas .img-wide{width:100%!important;max-width:100%!important;text-align:center;}
+  .page-canvas .img-wide img{width:100%!important;height:auto!important;}
   .page-canvas .tl-band{width:100%!important;height:auto!important;object-fit:contain!important;}
   .page-canvas .collap-chevron{display:none!important;}
   .page-canvas .collap-header{cursor:default;}
-  .page-canvas iframe.abs{width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:16/9;margin:0 0 16px!important;}
+  /* embedded map: original is a tall (~square) map, not a 16:9 strip */
+  .page-canvas iframe.abs{width:100%!important;max-width:100%!important;height:330px!important;margin:0 0 18px!important;}
   .page-canvas .foot-soc{display:inline-flex!important;width:34px!important;height:34px!important;margin:0 8px 16px 0!important;}
   .page-canvas .foot-soc img{width:22px!important;height:22px!important;}
 }
+
+/* ===================== MOBILE DUAL-RENDER ===================== */
+/* Subpages emit a desktop canvas (.desktop-view) AND a mobile canvas (.mobile-view) rebuilt
+   from the original's 390px geometry. Each mode shows its own pixel-reconstructed layout. */
+.mobile-view{display:none;}
+.m-canvas{position:relative;width:390px;margin:0 auto;overflow:hidden;background:#fff;
+  font-family:'Open Sans',sans-serif;}
+.m-canvas > *{position:absolute;box-sizing:border-box;}
+.m-banner{overflow:hidden;background:#1a1a1a;}
+.m-banner .m-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);}
+.m-img,.m-band{object-fit:cover;display:block;}
+.m-rule{background:var(--coral);z-index:3;}
+.m-soc img{width:100%;height:100%;display:block;}
+.m-title{z-index:3;}
+.m-if{background:#e8e8e8;}
+.m-btn{background:var(--red);color:#fff;border-radius:3px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.15;}
+.m-btn a{color:#fff;text-decoration:none;}
+.m-bandhead{background:var(--red);color:#fff;font-weight:400;
+  display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;}
+
+@media (max-width:768px){
+  .desktop-view{display:none!important;}
+  .mobile-view{display:block!important;}
+  /* header overlays the mobile banner/hero (transparent), matching the original */
+  .site-header{position:absolute!important;top:0;left:0;right:0;
+    background:transparent!important;box-shadow:none!important;color:#fff;z-index:30;}
+}
+
+/* index mobile-view extras */
+.m-hero{overflow:hidden;background:#111;}
+.m-hero .m-ov{position:absolute;inset:0;background:rgba(0,0,0,.2);}
+.m-band-red{background:var(--red);}
+.m-carousel{overflow:hidden;}
+.m-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .6s;}
+.m-slide.active{opacity:1;}
+.m-dots{display:flex;justify-content:center;gap:10px;}
+.m-dot{width:10px;height:10px;border-radius:50%;background:#bdbdbd;}
+.m-dot.active{background:var(--red);}
+.m-coral{position:absolute;border:none;height:2px;background:rgb(255,117,117);margin:0;}
