@@ -159,8 +159,10 @@ function header(active){
     return h+`</div>`;
   }).join('');
   return `<header class="site-header"><div class="header-inner">
+  <button class="nav-toggle" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   <a class="brand" href="index.html"><img src="assets/crest.png" alt="AIRFA" class="brand-logo"><span class="brand-title">AIRFA - DESDE 1895</span></a>
-  <nav class="main-nav">${items}<button class="nav-search" aria-label="Pesquisar"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.49 4.49 0 019.5 14z"/></svg></button></nav>
+  <nav class="main-nav">${items}</nav>
+  <button class="nav-search" aria-label="Pesquisar"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1114 9.5 4.49 4.49 0 019.5 14z"/></svg></button>
 </div></header>`;
 }
 const COOKIE = `<div class="cookie-box" id="cookieBox"><p>This site uses cookies from Google to deliver its services and to analyze traffic. Information about your use of this site is shared with Google. By using this site, you agree to its use of cookies.</p><div class="cookie-actions"><a href="#" class="cookie-learn">LEARN MORE</a><button class="cookie-ok" onclick="document.getElementById('cookieBox').style.display='none'">GOT IT</button></div></div>`;
@@ -209,13 +211,13 @@ function buildPage(slug){
     const [rr,gg,bb]=[+m[1],+m[2],+m[3]];
     if(rr>235&&gg>235&&bb>235) continue;           // gray/white overlays
     if(r.h>=800) continue;                          // full-viewport overlays
-    parts.push(`<div class="abs" style="left:${r.x}px;top:${r.y-ANCHOR}px;width:${r.w}px;height:${r.h}px;background:${r.bg};z-index:0"></div>`);
+    parts.push(`<div class="abs deco" style="left:${r.x}px;top:${r.y-ANCHOR}px;width:${r.w}px;height:${r.h}px;background:${r.bg};z-index:0"></div>`);
   }
 
   // thin divider lines (coral section separators / heading rules)
   for(const ln of (d.lines||[])){
     if(inTL(ln.y)) continue;
-    parts.push(`<div class="abs" style="left:${ln.x}px;top:${ln.y-ANCHOR}px;width:${ln.w}px;height:${ln.h}px;background:${ln.bg};z-index:1"></div>`);
+    parts.push(`<div class="abs deco" style="left:${ln.x}px;top:${ln.y-ANCHOR}px;width:${ln.w}px;height:${ln.h}px;background:${ln.bg};z-index:1"></div>`);
   }
   // "A Banda no Tempo" accordion: clickable year bands (collapsed strip -> enlarged photo)
   if(tl){
@@ -270,7 +272,7 @@ function buildPage(slug){
       if(e.box){
         const bt = e.box.y - ANCHOR;
         const rad = e.box.radius && e.box.radius!=='0px' ? `;border-radius:${e.box.radius}` : '';
-        parts.push(`<div class="abs" style="left:${e.box.x}px;top:${bt}px;width:${e.box.w}px;height:${e.box.h}px;background:${e.box.bg}${rad};z-index:1"></div>`);
+        parts.push(`<div class="abs deco" style="left:${e.box.x}px;top:${bt}px;width:${e.box.w}px;height:${e.box.h}px;background:${e.box.bg}${rad};z-index:1"></div>`);
       }
       const lh = parseFloat(e.lh) || (parseFloat(e.fs)*1.2) || 24;
       const oneLine = e.h <= lh*1.6;                 // single-line text must not wrap
@@ -281,7 +283,8 @@ function buildPage(slug){
         parts.push(`<div class="abs txt collap-header" data-collap="${col.id}" data-delta="${col.delta}" data-thr="${col.shiftAbove-ANCHOR}" style="left:${e.x}px;top:${top}px;min-width:${e.w}px;white-space:nowrap;${styleStr(e)};z-index:4;cursor:pointer">${textHtml(e)}</div>`+
           `<div class="abs collap-chevron" data-for="${col.id}" style="left:1190px;top:${top}px;z-index:4">&#9662;</div>`);
       } else {
-        parts.push(`<div class="abs txt" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)};z-index:2">${textHtml(e)}</div>`);
+        const band = e.box ? `;--band:${e.box.bg}` : '';
+        parts.push(`<div class="abs txt${e.box?' on-band':''}" style="left:${e.x}px;top:${top}px;${wrule}${ws};${styleStr(e)}${band};z-index:2">${textHtml(e)}</div>`);
       }
     }
   }
@@ -304,6 +307,11 @@ function buildPage(slug){
     parts.push(`<div class="abs txt" id="hino-letra" style="left:114px;top:${top}px;width:1138px;text-align:center;font-family:'Open Sans',sans-serif;font-size:18px;line-height:1.6;color:#2e3d4c;z-index:2">${letra}</div>`);
   }
 
+  // Sort into visual reading order (top, then left). DOM order is irrelevant to the
+  // absolutely-positioned desktop view (stacking is governed by z-index), but on mobile
+  // the canvas reflows to a single static column in this order.
+  const numAfter = (s, key) => { const m = s.match(new RegExp(key + ':(-?\\d+(?:\\.\\d+)?)px')); return m ? parseFloat(m[1]) : 0; };
+  parts.sort((a, b) => { const t = numAfter(a, 'top') - numAfter(b, 'top'); return Math.abs(t) > 4 ? t : numAfter(a, 'left') - numAfter(b, 'left'); });
   const canvas = `<div class="page-canvas" style="height:${H}px">\n${parts.join('\n')}\n</div>`;
   const banner = bannerHtml(slug, ANCHOR);
   const title = `${TITLES[slug]||''} | Academia Almadense (AIRFA)`;
@@ -329,11 +337,18 @@ ${header(d.active||slugActive(slug))}
 ${banner}
 ${canvas}
 ${COOKIE}
+${NAV_JS}
 ${(cols.length || tl) ? COLLAP_JS : ''}
 </body>
 </html>
 `;
 }
+const NAV_JS = `<script>
+(function(){
+  var tog=document.querySelector('.nav-toggle'), hdr=document.querySelector('.site-header');
+  if(tog){ tog.addEventListener('click',function(){ var o=hdr.classList.toggle('nav-open'); tog.setAttribute('aria-expanded',o); }); }
+})();
+</script>`;
 const COLLAP_JS = `<script>
 (function(){
   var canvas=document.querySelector('.page-canvas'); if(!canvas) return;
