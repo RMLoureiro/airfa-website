@@ -511,10 +511,17 @@ a{color:inherit;text-decoration:none;}
 .m-btn a{color:#fff;text-decoration:none;}
 .m-bandhead{background:var(--red);color:#fff;font-weight:400;
   display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;}
+/* mobile collapsible (Maestro bio, Galeria) revealed on tap */
+.m-collap-header{cursor:pointer;}
+.m-chev{font-size:.55em;color:#5f6368;vertical-align:middle;transition:transform .2s;display:inline-block;}
+.m-collap-header.open .m-chev{transform:rotate(180deg);}
+.m-collap-content p:last-child{margin-bottom:0;}
 
 @media (max-width:768px){
   .desktop-view{display:none!important;}
-  .mobile-view{display:block!important;}
+  /* the 390px reconstruction is scaled to the viewport by the mobile script; clip any
+     pre-scale overflow so a narrow phone never flashes a horizontal scrollbar */
+  .mobile-view{display:block!important;overflow-x:hidden;}
   /* header overlays the mobile banner/hero (transparent), matching the original */
   .site-header{position:absolute!important;top:0;left:0;right:0;
     background:transparent!important;box-shadow:none!important;color:#fff;z-index:30;}

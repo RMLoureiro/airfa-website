@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=308285f4">
 </head>
 <body class="subpage page-orgaos-sociais">
 <header class="site-header"><div class="header-inner">
@@ -253,5 +253,67 @@
 })();
 </script>
 
+<script>
+(function(){
+  var mv=document.querySelector('.mobile-view'); if(!mv) return;
+  var mc=mv.querySelector('.m-canvas'); if(!mc) return;
+  function fit(){
+    var vw=document.documentElement.clientWidth;   // not innerWidth: the 390px canvas can inflate that
+    if(vw<=768){
+      var s=vw/390;
+      mc.style.transform='scale('+s+')'; mc.style.transformOrigin='top left'; mc.style.margin='0';
+      mv.style.height=(parseFloat(mc.style.height)*s)+'px'; mv.style.overflow='hidden';
+    } else {
+      mc.style.transform=''; mc.style.transformOrigin=''; mc.style.margin='';
+      mv.style.height=''; mv.style.overflow='';
+    }
+  }
+  var kids=[].slice.call(mc.children);
+  kids.forEach(function(el){ el.setAttribute('data-mb', parseFloat(el.style.top)||0); });
+  var h0=parseFloat(mc.style.height); var active={};
+  function recompute(){
+    var extra=0; for(var k in active){ if(active[k]) extra+=active[k].delta; }
+    kids.forEach(function(el){
+      if(el.classList.contains('m-collap-content')) return;
+      var base=parseFloat(el.getAttribute('data-mb')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<base) off+=a.delta; }
+      el.style.top=(base+off)+'px';
+    });
+    mc.style.height=(h0+extra)+'px'; fit();
+  }
+  mc.querySelectorAll('.m-collap-header').forEach(function(h){
+    h.addEventListener('click',function(){
+      var c=document.getElementById(h.dataset.for); if(!c) return;
+      var exp=(c.style.display==='none'||c.style.display==='');
+      c.style.display=exp?'block':'none';
+      // place the revealed content below the heading's MEASURED bottom (it may wrap to >1 line)
+      var hbase=parseFloat(h.getAttribute('data-mb')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<hbase) off+=a.delta; }
+      var ctop=hbase + h.offsetHeight + 8;
+      c.style.top=(ctop+off)+'px';
+      active[h.dataset.for]=exp?{thr:ctop-1,delta:c.offsetHeight+24}:null;
+      h.classList.toggle('open',exp);
+      recompute();
+    });
+  });
+  var bands=[].slice.call(mc.querySelectorAll('.m-band[data-big]'));
+  function toggleBand(b){
+    var exp=!b.classList.contains('open'); var smh=parseFloat(b.dataset.smh);
+    if(exp){ b.src=b.dataset.big; b.style.height='auto'; } else { b.src=b.dataset.sm; b.style.height=smh+'px'; }
+    b.classList.toggle('open',exp);
+    active['b'+b.dataset.year]=exp?{thr:parseFloat(b.getAttribute('data-mb')),delta:b.offsetHeight-smh}:null;
+    recompute();
+  }
+  bands.forEach(function(b){ b.addEventListener('click',function(){toggleBand(b);}); });
+  // year labels (sometimes split into fragments) sit on top of a strip — tap them too
+  mc.querySelectorAll('.m-btn').forEach(function(btn){
+    var c=parseFloat(btn.getAttribute('data-mb'))+(parseFloat(btn.style.height)||0)/2, hit=null;
+    bands.forEach(function(b){ var bt=parseFloat(b.getAttribute('data-mb')), bh=parseFloat(b.dataset.smh); if(c>=bt-6 && c<=bt+bh+6) hit=b; });
+    if(hit){ btn.style.cursor='pointer'; btn.addEventListener('click',function(e){e.stopPropagation();toggleBand(hit);}); }
+  });
+  fit();
+  window.addEventListener('resize',fit);
+})();
+</script>
 </body>
 </html>

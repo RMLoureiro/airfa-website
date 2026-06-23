@@ -3,7 +3,13 @@
 // exact coordinates/styles captured from the original (see _scrape/layout/).
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 const ROOT = path.resolve('.');
+// Cache-bust the stylesheet: nginx serves styles.css with a 7-day cache, so a
+// content hash in the URL forces returning visitors to fetch the updated CSS
+// (otherwise a stale stylesheet drops the dual-render rules and the mobile
+// reconstruction stacks at the bottom of every page).
+const CSS_VER = crypto.createHash('md5').update(fs.readFileSync(path.join(ROOT, 'styles.css'))).digest('hex').slice(0, 8);
 const LAY = path.join(ROOT, '_scrape', 'layout');
 const ANCHOR_DEFAULT = 341;    // header(56) + banner(285) => content canvas top
 const ANCHOR_BY_SLUG = { documentos: 896 };  // documentos has a tall cover banner
@@ -176,15 +182,18 @@ function buildMobile(slug){
   const bsize = (bannerBg && bannerBg.bsize) || 'cover';
   const bpos = (bannerBg && bannerBg.bpos) || info.bgPos || '50% 50%';
   parts.push(`<div class="m-banner" style="left:0;top:0;width:390px;height:${bannerH}px;${bgFile?`background-image:url('${bgFile}');background-size:${bsize};background-position:${bpos};`:''}"><span class="m-ov"></span></div>`);
-  // decade/timeline band background strips (banda) -> local timeline images by order
+  // decade/timeline band background strips (banda) -> local timeline images by order.
+  // data-* attrs let the mobile script swap each strip for the enlarged photo on tap
+  // (same "click the date to see the photo" behaviour as desktop).
   const tlYears = ((TIMELINE[slug]||{}).years||[]).map(y=>y.y);
   let ti=0;
   for(const b of otherBgs){
     const yr = tlYears[ti++];
-    if(yr) parts.push(`<img class="m-band" src="assets/timeline/sm_${yr}.png" alt="${yr}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">`);
+    if(yr) parts.push(`<img class="m-band" src="assets/timeline/sm_${yr}.png" alt="${yr}" data-year="${yr}" data-sm="assets/timeline/sm_${yr}.png" data-big="assets/timeline/big_${yr}.png" data-smh="${b.h}" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;cursor:pointer">`);
     else parts.push(`<div class="m-band" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;background:url('${b.url}') center/cover"></div>`);
   }
   // content elements at their exact mobile coordinates
+  const collaps = COLLAPSIBLES[slug] || [];
   let imgIdx = 0; let titleEl = null;
   for(const e of m.els.slice().sort((a,b)=>a.y-b.y)){
     if(e.t==='img'){
@@ -204,6 +213,20 @@ function buildMobile(slug){
       if(!t) continue;
       if(/^(Skip to main content|Skip to navigation|Cookie Policy|Reject|Accept)$/i.test(t)) continue;
       if(/uses cookies from Google/i.test(t)) continue;
+      // Collapsible section heading (e.g. banda Maestro, historia Galeria): the mobile scrape
+      // only captured the collapsed title, so emit a tappable header + the hidden content the
+      // original reveals on click. The mobile script reflows everything below on expand.
+      const col = collaps.find(c=>c.header===t);
+      if(col){
+        const cff = (e.ff||"'Oswald'").replace(/"/g,"'");
+        const hsty = `left:${e.x}px;top:${e.y}px;width:${Math.ceil(e.w)+1}px;font-family:${cff};font-size:${e.fs};font-weight:${e.fw};color:${e.col};line-height:${e.lh};text-transform:${e.tt};text-align:${e.ta};cursor:pointer`;
+        parts.push(`<div class="m-txt m-collap-header" data-for="m-${col.id}" style="${hsty}">${mtext(e)} <span class="m-chev">&#9662;</span></div>`);
+        const cy = Math.round(e.y + (parseFloat(e.h)||parseFloat(e.lh)||40) + 8);
+        const body = col.paras ? col.paras.map(p=>`<p style="margin:0 0 12px">${esc(p)}</p>`).join('')
+                               : (col.image ? `<img src="${col.image}" alt="" style="width:100%;height:auto;display:block">` : '');
+        parts.push(`<div id="m-${col.id}" class="m-collap-content" style="display:none;left:27px;top:${cy}px;width:337px;font-family:'Open Sans',sans-serif;font-size:14px;line-height:1.5;color:rgb(46,61,76)">${body}</div>`);
+        continue;
+      }
       const isTitle = e.y < bannerH && parseFloat(e.fs) >= 28;
       if(isTitle && !titleEl) titleEl = e;
       const ff = (e.ff||"'Open Sans'").replace(/"/g,"'");
@@ -492,7 +515,7 @@ ${seoHead(slug, title, desc)}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=${CSS_VER}">
 </head>
 <body class="subpage page-${slug}">
 ${header(d.active||slugActive(slug))}
@@ -501,9 +524,9 @@ ${banner}
 ${canvas}
 </div>
 ${hasMlay(slug) ? `<div class="mobile-view">\n${buildMobile(slug)}\n</div>` : ''}
-${COOKIE}
 ${NAV_JS}
 ${(cols.length || tl) ? COLLAP_JS : ''}
+${hasMlay(slug) ? MOBILE_JS : ''}
 </body>
 </html>
 `;
@@ -554,6 +577,73 @@ const COLLAP_JS = `<script>
   document.querySelectorAll('.collap-header').forEach(function(h){ h.addEventListener('click',function(){toggle(h.dataset.collap);}); });
   document.querySelectorAll('.collap-chevron').forEach(function(c){ c.style.cursor='pointer'; c.addEventListener('click',function(){toggle(c.dataset.for);}); });
   document.querySelectorAll('.tl-band').forEach(function(b){ b.addEventListener('click',function(){toggleBand(b);}); });
+})();
+</script>`;
+// Mobile reconstruction is a fixed 390px canvas. (1) Scale it to the actual viewport width so the
+// banner fills edge-to-edge under the (full-width) header on every phone — otherwise wider phones
+// show white margins and the white burger/search icons land on that white gap and vanish.
+// (2) Wire the collapsibles (Maestro) and timeline year strips that the static scrape left inert,
+// reflowing everything below on expand (mirrors the desktop COLLAP_JS, in unscaled design px).
+const MOBILE_JS = `<script>
+(function(){
+  var mv=document.querySelector('.mobile-view'); if(!mv) return;
+  var mc=mv.querySelector('.m-canvas'); if(!mc) return;
+  function fit(){
+    var vw=document.documentElement.clientWidth;   // not innerWidth: the 390px canvas can inflate that
+    if(vw<=768){
+      var s=vw/390;
+      mc.style.transform='scale('+s+')'; mc.style.transformOrigin='top left'; mc.style.margin='0';
+      mv.style.height=(parseFloat(mc.style.height)*s)+'px'; mv.style.overflow='hidden';
+    } else {
+      mc.style.transform=''; mc.style.transformOrigin=''; mc.style.margin='';
+      mv.style.height=''; mv.style.overflow='';
+    }
+  }
+  var kids=[].slice.call(mc.children);
+  kids.forEach(function(el){ el.setAttribute('data-mb', parseFloat(el.style.top)||0); });
+  var h0=parseFloat(mc.style.height); var active={};
+  function recompute(){
+    var extra=0; for(var k in active){ if(active[k]) extra+=active[k].delta; }
+    kids.forEach(function(el){
+      if(el.classList.contains('m-collap-content')) return;
+      var base=parseFloat(el.getAttribute('data-mb')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<base) off+=a.delta; }
+      el.style.top=(base+off)+'px';
+    });
+    mc.style.height=(h0+extra)+'px'; fit();
+  }
+  mc.querySelectorAll('.m-collap-header').forEach(function(h){
+    h.addEventListener('click',function(){
+      var c=document.getElementById(h.dataset.for); if(!c) return;
+      var exp=(c.style.display==='none'||c.style.display==='');
+      c.style.display=exp?'block':'none';
+      // place the revealed content below the heading's MEASURED bottom (it may wrap to >1 line)
+      var hbase=parseFloat(h.getAttribute('data-mb')), off=0;
+      for(var k in active){ var a=active[k]; if(a && a.thr<hbase) off+=a.delta; }
+      var ctop=hbase + h.offsetHeight + 8;
+      c.style.top=(ctop+off)+'px';
+      active[h.dataset.for]=exp?{thr:ctop-1,delta:c.offsetHeight+24}:null;
+      h.classList.toggle('open',exp);
+      recompute();
+    });
+  });
+  var bands=[].slice.call(mc.querySelectorAll('.m-band[data-big]'));
+  function toggleBand(b){
+    var exp=!b.classList.contains('open'); var smh=parseFloat(b.dataset.smh);
+    if(exp){ b.src=b.dataset.big; b.style.height='auto'; } else { b.src=b.dataset.sm; b.style.height=smh+'px'; }
+    b.classList.toggle('open',exp);
+    active['b'+b.dataset.year]=exp?{thr:parseFloat(b.getAttribute('data-mb')),delta:b.offsetHeight-smh}:null;
+    recompute();
+  }
+  bands.forEach(function(b){ b.addEventListener('click',function(){toggleBand(b);}); });
+  // year labels (sometimes split into fragments) sit on top of a strip — tap them too
+  mc.querySelectorAll('.m-btn').forEach(function(btn){
+    var c=parseFloat(btn.getAttribute('data-mb'))+(parseFloat(btn.style.height)||0)/2, hit=null;
+    bands.forEach(function(b){ var bt=parseFloat(b.getAttribute('data-mb')), bh=parseFloat(b.dataset.smh); if(c>=bt-6 && c<=bt+bh+6) hit=b; });
+    if(hit){ btn.style.cursor='pointer'; btn.addEventListener('click',function(e){e.stopPropagation();toggleBand(hit);}); }
+  });
+  fit();
+  window.addEventListener('resize',fit);
 })();
 </script>`;
 function slugActive(slug){
